@@ -4,4 +4,18 @@
     <string name="home_title">Dosyalar</string>
     <string name="scaffold_placeholder_title">İskelet hazır</string>
     <string name="scaffold_placeholder_description">Gezgin ekranı F-1.3 görevinde gelecek.</string>
+
+    <!-- İzin / onboarding -->
+    <string name="permission_title">Dosyalarına erişim</string>
+    <string name="permission_subtitle">Bir dosya yöneticisinin çalışabilmesi için cihazdaki dosyaları görmesi gerekir.</string>
+    <string name="permission_reason_browse">Klasörler arasında gezinmek, dosya kopyalamak, taşımak ve silmek için</string>
+    <string name="permission_reason_search">Alt klasörler dâhil arama yapabilmek için</string>
+    <string name="permission_reason_offline">Bu uygulamanın internet izni yoktur; dosyaların cihazdan hiçbir yere gönderilemez</string>
+    <string name="permission_grant_full">Tüm dosyalara erişim ver</string>
+    <string name="permission_continue_limited">Sınırlı modda devam et</string>
+    <string name="permission_settings_unavailable">Ayarlar ekranı açılamadı. Ayarlar → Uygulamalar → Dosyalar → İzinler yolunu izleyebilirsin.</string>
+
+    <!-- Sınırlı mod bandı -->
+    <string name="banner_limited_mode">Sınırlı mod: yalnızca medya dosyaları görünüyor.</string>
+    <string name="banner_limited_mode_action">İzin ver</string>
 </resources>

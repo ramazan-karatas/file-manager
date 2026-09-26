@@ -1,11 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!--
       Bu uygulamanın INTERNET izni YOKTUR ve olmayacaktır.
       Reklamsızlığın en sağlam garantisi budur; bkz. docs/00-architecture.md §5.
-      İzinler M1 boyunca F-1.1 ile eklenecek (MANAGE_EXTERNAL_STORAGE, POST_NOTIFICATIONS).
     -->
+
+    <!--
+      Tam dosya sistemi erişimi. Play Store bu izni kısıtlar; uygulama sideload
+      dağıtıldığı için sorun değil (docs/00-architecture.md §5).
+    -->
+    <uses-permission
+        android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage" />
+
+    <!-- API 32 ve altı: sınırlı mod için MediaStore okuma. -->
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <!-- API 28 ve altı: bu izin gerçek anlamda tam erişim verir. -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+
+    <!-- API 33+: bölünmüş medya izinleri, sınırlı mod için. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <!-- API 34+: kullanıcı "yalnızca seçilen öğeler" derse verilen izin. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
 
     <application
         android:name=".FilesApplication"
@@ -18,7 +42,6 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
             android:theme="@style/Theme.Files"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>

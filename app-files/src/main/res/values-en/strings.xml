@@ -4,4 +4,18 @@
     <string name="home_title">Files</string>
     <string name="scaffold_placeholder_title">Scaffold ready</string>
     <string name="scaffold_placeholder_description">The browser screen arrives in task F-1.3.</string>
+
+    <!-- Permission / onboarding -->
+    <string name="permission_title">Access to your files</string>
+    <string name="permission_subtitle">A file manager needs to see the files on your device to work at all.</string>
+    <string name="permission_reason_browse">To browse folders and copy, move or delete files</string>
+    <string name="permission_reason_search">To search recursively through subfolders</string>
+    <string name="permission_reason_offline">This app has no internet permission; your files cannot leave the device</string>
+    <string name="permission_grant_full">Grant all-files access</string>
+    <string name="permission_continue_limited">Continue in limited mode</string>
+    <string name="permission_settings_unavailable">Could not open Settings. Try Settings → Apps → Files → Permissions.</string>
+
+    <!-- Limited mode banner -->
+    <string name="banner_limited_mode">Limited mode: only media files are visible.</string>
+    <string name="banner_limited_mode_action">Grant</string>
 </resources>

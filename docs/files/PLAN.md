@@ -43,11 +43,18 @@ Bir görev bitince buradaki kutuyu işaretle. Görevler sıralıdır; bağımlı
 
 ## M1 — Çalışan dosya yöneticisi (ana hedef)
 
-- [ ] **F-1.1 — İzin altyapısı**
-  - `StoragePermissionManager` (`:core:storage`): API'ye göre hangi izin gerekli, durum Flow'u
-  - `MANAGE_EXTERNAL_STORAGE` intent'i + MIUI fallback (try/catch → `ACTION_APPLICATION_DETAILS_SETTINGS`)
-  - Onboarding ekranı (SPEC 3.7), izin yoksa "sınırlı mod" bayrağı
-  - Kabul: izin reddedilince çökme yok, üstte uyarı bandı görünüyor.
+- [x] **F-1.1 — İzin altyapısı**
+  - `StoragePermissions` (saf mantık, 13 test) + `StoragePermissionChecker` (Flow'lu, Hilt'li)
+  - `manageAllFilesIntents()`: uygulamaya özel ekran → genel liste → uygulama detayları,
+    sırayla denenir, hiçbiri açılmazsa kullanıcıya yol tarif edilir
+  - `PermissionRoute` onboarding ekranı, `AccessWarningBanner`, DataStore'da sınırlı mod onayı
+  - İzin durumu `LifecycleResumeEffect` ile her öne gelişte tazelenir (Ayarlar'dan dönüş)
+  - **Not:** Android 14+ kısmi görsel erişimi (`READ_MEDIA_VISUAL_USER_SELECTED`) de
+    ele alındı; sınırlı mod sayılıyor.
+  - Kabul: API 37 emülatöründe üç durum da doğrulandı — izin yokken onboarding (çökme yok),
+    sınırlı modda ana ekran + uyarı bandı, tam erişimde onboarding atlanıyor ve bant yok.
+  - **Bilinen kozmetik sorun:** açılışta tercihler okunurken kısa bir spinner görünüyor;
+    F-1.11'de splash screen API'siyle giderilecek.
 
 - [ ] **F-1.2 — `FileNode` soyutlaması ve yerel veri kaynağı**
   - `domain/model/FileNode.kt` (SPEC 4), `LocalFileNode`, `DocumentNode`

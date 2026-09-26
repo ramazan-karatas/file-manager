@@ -5,5 +5,6 @@ package dev.rk.systemapps.files.ui
  * argümanlı rotalara geçilirken tip güvenli (kotlinx.serialization) sürüme taşınacak.
  */
 object Routes {
+    const val PERMISSION = "permission"
     const val HOME = "home"
 }

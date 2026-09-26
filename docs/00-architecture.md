@@ -86,6 +86,8 @@ DataSource (File I/O, MediaStore, Room, DocumentFile)
 |---|---|---|
 | `MANAGE_EXTERNAL_STORAGE` | app-files | API 30+. Sideload olduğu için sorun yok. Onboarding'de neden gerektiği anlatılır. |
 | `READ_EXTERNAL_STORAGE` | app-files (API ≤ 29) | eski cihaz fallback |
+| `READ_MEDIA_IMAGES` / `_VIDEO` / `_AUDIO` | app-files (sınırlı mod) | API 33+ |
+| `READ_MEDIA_VISUAL_USER_SELECTED` | app-files | API 34+. İstenmezse sistem "yalnızca seçilenler" seçeneğini hiç sunmaz; kısmi erişim de sınırlı mod sayılır. |
 | `READ_MEDIA_AUDIO` | app-music | API 33+ |
 | `READ_EXTERNAL_STORAGE` | app-music (API ≤ 32) | — |
 | `FOREGROUND_SERVICE` + `_DATA_SYNC` | app-files | dosya işlemi servisi |

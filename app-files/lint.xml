@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!--
+      Lint, minSdk 26 olduğu için mipmap-anydpi-v26 klasörünü gereksiz sayıp
+      mipmap-anydpi'ye taşımayı öneriyor. Taşındığında AAPT2 kaynağı çözemiyor
+      ("resource mipmap/ic_launcher not found"), bu yüzden standart klasör korunuyor.
+    -->
+    <issue id="ObsoleteSdkInt">
+        <ignore path="src/main/res/mipmap-anydpi-v26" />
+    </issue>
+</lint>
