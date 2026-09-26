@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Gerçek tema Compose tarafında (SystemAppsTheme). Bu yalnızca açılış penceresi. -->
+    <style name="Theme.Files" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@android:color/white</item>
+    </style>
+</resources>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+      Bu uygulamanın INTERNET izni YOKTUR ve olmayacaktır.
+      Reklamsızlığın en sağlam garantisi budur; bkz. docs/00-architecture.md §5.
+      İzinler M1 boyunca F-1.1 ile eklenecek (MANAGE_EXTERNAL_STORAGE, POST_NOTIFICATIONS).
+    -->
+
+    <application
+        android:name=".FilesApplication"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Files">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.Files"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

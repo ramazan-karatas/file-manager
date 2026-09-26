@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Dosyalar</string>
+    <string name="home_title">Dosyalar</string>
+    <string name="scaffold_placeholder_title">İskelet hazır</string>
+    <string name="scaffold_placeholder_description">Gezgin ekranı F-1.3 görevinde gelecek.</string>
+</resources>
