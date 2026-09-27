@@ -50,7 +50,13 @@ Sunum için MIUI ile karşılaştırmalı ölçüm: [docs/files/BENCHMARK.md](do
 ./gradlew testDebugUnitTest                  # tüm unit testler
 ./gradlew :app-files:installDebug            # bağlı cihaza kur
 ./gradlew lint                               # Android Lint
+./gradlew :app-files:assembleRelease         # kucultulmus, imzali APK
 ```
+
+**Release imzalama:** anahtar repo disinda (`C:/Users/ramaz/.android-keys/system_apps.jks`),
+parolalar `keystore.properties` icinde ve bu dosya `.gitignore`da. Dosya yoksa release
+imzasiz derlenir, yani temiz bir klon ve CI kirilmaz. Anahtar kaybedilirse uygulamanin
+ustune yeni surum kurulamaz (once silmek gerekir, veriler gider) — yedeklenmeli.
 
 Gradle daemon'ı JDK 21 ile çalışır (`gradle/gradle-daemon-jvm.properties`); `JAVA_HOME`
 ayarlamaya gerek yok. `local.properties` makineye özeldir ve commit'lenmez.
