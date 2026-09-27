@@ -49,6 +49,11 @@ medya oynatma (harici uygulamaya intent gönderilir), metin editörü.
 - Sıralama: ad / boyut / değiştirilme tarihi / tür × artan-azalan.
   Klasörler varsayılan olarak üstte (ayardan kapatılabilir).
 - Gizli dosyaları göster/gizle anahtarı.
+- Görünüm ve sıralama tercihleri **tek bir seçenekler sayfasında** toplanır
+  (üst çubuktaki tek düğme → alttan açılan sayfa): görünüm ve sıra segment
+  düğmeleriyle, ölçüt çiplerle, iki anahtar switch'le. Üst çubukta ayrı sıralama
+  menüsü ve ayrı görünüm düğmesi tutulmaz — dar ekranda arama ikonuyla birlikte
+  üç eylem sığmıyordu.
 - Uzun basınca **seçim modu**: üst çubukta sayaç + işlemler
   (kopyala, kes, sil, yeniden adlandır\*, paylaş, özellikler\*). \* = yalnız tek seçimde etkin.
 - FAB: yeni klasör / yeni boş dosya.

@@ -7,6 +7,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +18,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -24,30 +27,26 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.outlined.Sort
-import androidx.compose.material.icons.automirrored.outlined.ViewList
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.CreateNewFolder
 import androidx.compose.material.icons.outlined.DriveFileRenameOutline
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.automirrored.outlined.NoteAdd
 import androidx.compose.material.icons.outlined.Share
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.ContentCut
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Deselect
 import androidx.compose.material.icons.outlined.FolderOff
-import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.SelectAll
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -66,6 +65,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.pluralStringResource
@@ -86,12 +87,10 @@ import dev.rk.systemapps.core.design.component.LoadingState
 import dev.rk.systemapps.core.design.component.SelectionTopBar
 import dev.rk.systemapps.core.design.theme.SystemAppsTheme
 import dev.rk.systemapps.files.R
-import dev.rk.systemapps.files.domain.model.BrowserPrefs
 import dev.rk.systemapps.files.domain.model.FileNode
 import dev.rk.systemapps.files.domain.model.LocalFileNode
 import dev.rk.systemapps.files.domain.model.OperationState
 import kotlinx.coroutines.launch
-import dev.rk.systemapps.files.domain.model.SortBy
 
 @Composable
 fun BrowserRoute(
@@ -200,6 +199,15 @@ fun BrowserScreen(
     }
 
     var deleteRequested by remember { mutableStateOf(false) }
+    var optionsVisible by rememberSaveable { mutableStateOf(false) }
+
+    if (optionsVisible) {
+        BrowserOptionsSheet(
+            prefs = uiState.prefs,
+            onAction = onAction,
+            onDismiss = { optionsVisible = false },
+        )
+    }
 
     if (deleteRequested) {
         ConfirmDialog(
@@ -350,21 +358,10 @@ fun BrowserScreen(
                                 contentDescription = stringResource(R.string.action_search),
                             )
                         }
-                        SortMenu(prefs = uiState.prefs, onAction = onAction)
-                        IconButton(onClick = { onAction(BrowserAction.ToggleViewMode) }) {
+                        IconButton(onClick = { optionsVisible = true }) {
                             Icon(
-                                imageVector = if (uiState.prefs.gridMode) {
-                                    Icons.AutoMirrored.Outlined.ViewList
-                                } else {
-                                    Icons.Outlined.GridView
-                                },
-                                contentDescription = stringResource(
-                                    if (uiState.prefs.gridMode) {
-                                        R.string.action_view_list
-                                    } else {
-                                        R.string.action_view_grid
-                                    },
-                                ),
+                                imageVector = Icons.Outlined.Tune,
+                                contentDescription = stringResource(R.string.action_options),
                             )
                         }
                     },
@@ -410,59 +407,6 @@ fun BrowserScreen(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun SortMenu(prefs: BrowserPrefs, onAction: (BrowserAction) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-
-    IconButton(onClick = { expanded = true }) {
-        Icon(
-            imageVector = Icons.AutoMirrored.Outlined.Sort,
-            contentDescription = stringResource(R.string.action_sort),
-        )
-    }
-
-    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-        SortBy.entries.forEach { sortBy ->
-            DropdownMenuItem(
-                text = { Text(stringResource(sortBy.labelRes())) },
-                onClick = { onAction(BrowserAction.SetSortBy(sortBy)) },
-                trailingIcon = {
-                    if (prefs.sortBy == sortBy) {
-                        Icon(Icons.Outlined.Check, contentDescription = null)
-                    }
-                },
-            )
-        }
-
-        HorizontalDivider()
-
-        DropdownMenuItem(
-            text = {
-                Text(
-                    stringResource(
-                        if (prefs.ascending) R.string.sort_descending else R.string.sort_ascending,
-                    ),
-                )
-            },
-            onClick = { onAction(BrowserAction.ToggleSortDirection) },
-        )
-        DropdownMenuItem(
-            text = { Text(stringResource(R.string.sort_folders_first)) },
-            onClick = { onAction(BrowserAction.ToggleFoldersFirst) },
-            trailingIcon = {
-                if (prefs.foldersFirst) Icon(Icons.Outlined.Check, contentDescription = null)
-            },
-        )
-        DropdownMenuItem(
-            text = { Text(stringResource(R.string.sort_show_hidden)) },
-            onClick = { onAction(BrowserAction.ToggleShowHidden) },
-            trailingIcon = {
-                if (prefs.showHidden) Icon(Icons.Outlined.Check, contentDescription = null)
-            },
-        )
     }
 }
 
@@ -598,58 +542,79 @@ private fun FileGrid(
     modifier: Modifier = Modifier,
 ) {
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 96.dp),
+        columns = GridCells.Adaptive(minSize = 104.dp),
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(8.dp),
+        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         items(items = uiState.items, key = { it.id }) { node ->
-            val selected = node.id in uiState.selectedIds
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        if (selected) {
-                            MaterialTheme.colorScheme.secondaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.surface
-                        },
-                    )
-                    .combinedClickable(
-                        onClick = {
-                            if (uiState.selectionActive) {
-                                onAction(BrowserAction.ToggleSelection(node.id))
-                            } else {
-                                onItemClick(node)
-                            }
-                        },
-                        onLongClick = { onAction(BrowserAction.ToggleSelection(node.id)) },
-                    )
-                    .padding(8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    if (selected) {
-                        Icon(
-                            imageVector = Icons.Filled.CheckCircle,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(56.dp),
-                        )
+            GridTile(
+                node = node,
+                selected = node.id in uiState.selectedIds,
+                onClick = {
+                    if (uiState.selectionActive) {
+                        onAction(BrowserAction.ToggleSelection(node.id))
                     } else {
-                        FileThumbnail(node = node, size = 56.dp, cornerRadius = 8.dp)
+                        onItemClick(node)
                     }
-                }
-                Text(
-                    text = node.name,
-                    style = MaterialTheme.typography.bodySmall,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 8.dp),
+                },
+                onLongClick = { onAction(BrowserAction.ToggleSelection(node.id)) },
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun GridTile(
+    node: FileNode,
+    selected: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+) {
+    val background by animateColorAsState(
+        targetValue = if (selected) {
+            MaterialTheme.colorScheme.secondaryContainer
+        } else {
+            Color.Transparent
+        },
+        label = "GridTileSelection",
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(background)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            .padding(vertical = 12.dp, horizontal = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        // Liste satırındaki gibi: önizleme kalır, onay rozeti üstüne biner.
+        Box(contentAlignment = Alignment.Center) {
+            FileThumbnail(node = node, size = 56.dp, cornerRadius = 12.dp)
+            if (selected) {
+                Icon(
+                    imageVector = Icons.Filled.CheckCircle,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .size(20.dp)
+                        .background(MaterialTheme.colorScheme.surface, CircleShape),
                 )
             }
         }
+        Text(
+            text = node.name,
+            style = MaterialTheme.typography.bodySmall,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 8.dp),
+        )
     }
 }
 
@@ -659,13 +624,6 @@ private fun FileNode.subtitle(): String = if (isDirectory) {
     formatDate(lastModified)
 } else {
     "${formatBytes(size)} · ${formatDate(lastModified)}"
-}
-
-private fun SortBy.labelRes(): Int = when (this) {
-    SortBy.NAME -> R.string.sort_by_name
-    SortBy.SIZE -> R.string.sort_by_size
-    SortBy.DATE -> R.string.sort_by_date
-    SortBy.TYPE -> R.string.sort_by_type
 }
 
 private fun BrowserError.titleRes(): Int = when (this) {

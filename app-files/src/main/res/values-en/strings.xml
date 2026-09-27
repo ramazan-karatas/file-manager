@@ -20,8 +20,8 @@
     <!-- Browser -->
     <string name="storage_internal">Internal storage</string>
     <string name="action_up">Go up</string>
-    <string name="action_view_list">List view</string>
-    <string name="action_view_grid">Grid view</string>
+    <string name="action_view_list">List</string>
+    <string name="action_view_grid">Grid</string>
     <string name="action_retry">Retry</string>
     <string name="browser_empty_title">This folder is empty</string>
     <string name="browser_empty_description">There are no files to show here.</string>
@@ -30,18 +30,22 @@
     <string name="browser_error_unknown">Something went wrong opening this folder</string>
 
     <!-- Sorting and selection -->
-    <string name="action_sort">Sort</string>
     <string name="action_close_selection">Close selection</string>
     <string name="action_select_all">Select all</string>
     <string name="action_invert_selection">Invert selection</string>
-    <string name="sort_by_name">By name</string>
-    <string name="sort_by_size">By size</string>
-    <string name="sort_by_date">By date</string>
-    <string name="sort_by_type">By type</string>
-    <string name="sort_ascending">Sort ascending</string>
-    <string name="sort_descending">Sort descending</string>
+    <string name="sort_by_name">Name</string>
+    <string name="sort_by_size">Size</string>
+    <string name="sort_by_date">Date</string>
+    <string name="sort_by_type">Type</string>
+    <string name="sort_ascending">Ascending</string>
+    <string name="sort_descending">Descending</string>
     <string name="sort_folders_first">Folders first</string>
     <string name="sort_show_hidden">Show hidden files</string>
+    <string name="action_options">View options</string>
+    <string name="options_title">View and sorting</string>
+    <string name="options_view">View</string>
+    <string name="options_sort_by">Sort by</string>
+    <string name="options_sort_order">Order</string>
 
     <!-- File operations -->
     <string name="action_copy">Copy</string>
@@ -121,6 +125,7 @@
     <string name="search_placeholder">Search in this folder</string>
     <string name="search_no_results">No results</string>
     <string name="storage_usage">%1$s of %2$s used</string>
+    <string name="storage_free">%1$s free</string>
     <string name="home_categories">Categories</string>
     <string name="home_recent">Recent</string>
     <string name="category_downloads">Downloads</string>

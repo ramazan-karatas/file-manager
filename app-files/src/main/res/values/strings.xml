@@ -20,8 +20,8 @@
     <!-- Gezgin -->
     <string name="storage_internal">Dahili depolama</string>
     <string name="action_up">Üst klasör</string>
-    <string name="action_view_list">Liste görünümü</string>
-    <string name="action_view_grid">Izgara görünümü</string>
+    <string name="action_view_list">Liste</string>
+    <string name="action_view_grid">Izgara</string>
     <string name="action_retry">Yeniden dene</string>
     <string name="browser_empty_title">Bu klasör boş</string>
     <string name="browser_empty_description">Burada gösterilecek dosya yok.</string>
@@ -30,18 +30,22 @@
     <string name="browser_error_unknown">Klasör açılırken bir sorun oluştu</string>
 
     <!-- Sıralama ve seçim -->
-    <string name="action_sort">Sırala</string>
     <string name="action_close_selection">Seçimi kapat</string>
     <string name="action_select_all">Tümünü seç</string>
     <string name="action_invert_selection">Seçimi tersine çevir</string>
-    <string name="sort_by_name">Ada göre</string>
-    <string name="sort_by_size">Boyuta göre</string>
-    <string name="sort_by_date">Tarihe göre</string>
-    <string name="sort_by_type">Türe göre</string>
-    <string name="sort_ascending">Artan sırala</string>
-    <string name="sort_descending">Azalan sırala</string>
+    <string name="sort_by_name">Ad</string>
+    <string name="sort_by_size">Boyut</string>
+    <string name="sort_by_date">Tarih</string>
+    <string name="sort_by_type">Tür</string>
+    <string name="sort_ascending">Artan</string>
+    <string name="sort_descending">Azalan</string>
     <string name="sort_folders_first">Klasörler üstte</string>
     <string name="sort_show_hidden">Gizli dosyaları göster</string>
+    <string name="action_options">Görünüm seçenekleri</string>
+    <string name="options_title">Görünüm ve sıralama</string>
+    <string name="options_view">Görünüm</string>
+    <string name="options_sort_by">Sıralama ölçütü</string>
+    <string name="options_sort_order">Sıra</string>
 
     <!-- Dosya işlemleri -->
     <string name="action_copy">Kopyala</string>
@@ -116,6 +120,7 @@
     <string name="search_placeholder">Bu klasörde ara</string>
     <string name="search_no_results">Sonuç bulunamadı</string>
     <string name="storage_usage">%1$s / %2$s kullanıldı</string>
+    <string name="storage_free">%1$s boş</string>
     <string name="home_categories">Kategoriler</string>
     <string name="home_recent">Son değişenler</string>
     <string name="category_downloads">İndirilenler</string>

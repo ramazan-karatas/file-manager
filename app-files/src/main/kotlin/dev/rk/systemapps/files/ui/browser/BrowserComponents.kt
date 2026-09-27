@@ -14,19 +14,19 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
-import dev.rk.systemapps.core.design.component.ItemIcon
 import dev.rk.systemapps.files.data.image.ApkIconRequest
 import dev.rk.systemapps.files.R
 import dev.rk.systemapps.files.domain.model.FileNode
@@ -41,34 +41,51 @@ fun Breadcrumbs(
     modifier: Modifier = Modifier,
 ) {
     val storageRootLabel = stringResource(R.string.storage_internal)
-    Surface(modifier = modifier.fillMaxWidth(), tonalElevation = 1.dp) {
-        Row(
-            modifier = Modifier
-                .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            crumbs.forEachIndexed { index, crumb ->
-                if (index > 0) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(16.dp),
-                    )
-                }
-                val isLast = index == crumbs.lastIndex
-                TextButton(onClick = { onCrumbClick(crumb) }) {
-                    Text(
-                        text = if (crumb.isStorageRoot) storageRootLabel else crumb.name,
-                        style = MaterialTheme.typography.labelLarge,
-                        color = if (isLast) {
-                            MaterialTheme.colorScheme.onSurface
-                        } else {
-                            MaterialTheme.colorScheme.primary
-                        },
-                    )
-                }
+    val scrollState = rememberScrollState()
+
+    // Derin klasörlerde bulunulan yer sağa taşıyor; her gezinmede sona kaydırılıyor
+    // ki kullanıcı nerede olduğunu görsün.
+    LaunchedEffect(crumbs) {
+        scrollState.animateScrollTo(scrollState.maxValue)
+    }
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .horizontalScroll(scrollState)
+            .padding(horizontal = 12.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        crumbs.forEachIndexed { index, crumb ->
+            if (index > 0) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+            val isLast = index == crumbs.lastIndex
+            Surface(
+                onClick = { onCrumbClick(crumb) },
+                shape = RoundedCornerShape(percent = 50),
+                color = if (isLast) {
+                    MaterialTheme.colorScheme.secondaryContainer
+                } else {
+                    Color.Transparent
+                },
+                contentColor = if (isLast) {
+                    MaterialTheme.colorScheme.onSecondaryContainer
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            ) {
+                Text(
+                    text = if (crumb.isStorageRoot) storageRootLabel else crumb.name,
+                    style = MaterialTheme.typography.labelLarge,
+                    maxLines = 1,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                )
             }
         }
     }
@@ -89,7 +106,14 @@ fun FileThumbnail(
     val iconPainter = rememberVectorPainter(kind.icon())
 
     if (!kind.hasThumbnail) {
-        ItemIcon(icon = kind.icon(), modifier = modifier)
+        // Tür ikonu önizlemeyle aynı oranda büyür; ızgarada 40 dp'lik liste ikonu
+        // 56 dp'lik küçük resimlerin yanında kaybolmuyor.
+        Icon(
+            imageVector = kind.icon(),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = modifier.size(size * ICON_TO_THUMBNAIL_RATIO),
+        )
         return
     }
 
@@ -115,3 +139,6 @@ fun FileThumbnail(
             ),
     )
 }
+
+/** Liste satırında 40 dp kutuda 28 dp ikon vardı; oran her boyutta korunuyor. */
+private const val ICON_TO_THUMBNAIL_RATIO = 0.7f

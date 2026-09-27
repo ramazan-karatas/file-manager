@@ -1,12 +1,17 @@
 package dev.rk.systemapps.files.ui.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -21,21 +26,27 @@ import androidx.compose.material.icons.outlined.SdCard
 import androidx.compose.material.icons.outlined.Smartphone
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -44,8 +55,8 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.rk.systemapps.core.common.format.formatBytes
 import dev.rk.systemapps.core.common.format.formatDate
+import dev.rk.systemapps.core.common.format.formatPercent
 import dev.rk.systemapps.core.design.component.AppListItem
-import dev.rk.systemapps.core.design.component.ItemIcon
 import dev.rk.systemapps.core.design.theme.SystemAppsTheme
 import dev.rk.systemapps.core.storage.model.StorageVolumeInfo
 import dev.rk.systemapps.core.storage.permission.StorageAccessLevel
@@ -93,10 +104,13 @@ fun HomeScreen(
     onOpenAbout: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Büyük başlık kaydırınca küçülüyor: ekranın üstü boşa gitmiyor, liste yer kazanıyor.
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
     Scaffold(
-        modifier = modifier,
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            TopAppBar(
+            MediumTopAppBar(
                 title = { Text(stringResource(R.string.home_title)) },
                 actions = {
                     IconButton(onClick = onOpenAbout) {
@@ -106,6 +120,7 @@ fun HomeScreen(
                         )
                     }
                 },
+                scrollBehavior = scrollBehavior,
             )
         },
     ) { innerPadding ->
@@ -157,44 +172,76 @@ private fun StorageCard(volume: StorageVolumeInfo, onClick: () -> Unit) {
     val label = volume.label.ifEmpty { stringResource(R.string.storage_internal) }
 
     Card(
+        onClick = onClick,
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        ),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp)
-            .clickable(onClick = onClick),
+            .padding(horizontal = 16.dp, vertical = 6.dp),
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector = if (volume.isRemovable) {
-                    Icons.Outlined.SdCard
-                } else {
-                    Icons.Outlined.Smartphone
-                },
-                contentDescription = null,
-                modifier = Modifier.size(32.dp),
-                tint = MaterialTheme.colorScheme.primary,
-            )
-            Column(modifier = Modifier.padding(start = 16.dp)) {
-                Text(text = label, style = MaterialTheme.typography.titleMedium)
-                LinearProgressIndicator(
-                    progress = { volume.usedFraction },
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // İkon renkli bir kap içinde: kart içinde tek başına yüzmüyor.
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                )
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = if (volume.isRemovable) {
+                            Icons.Outlined.SdCard
+                        } else {
+                            Icons.Outlined.Smartphone
+                        },
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                }
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 16.dp),
+                ) {
+                    Text(text = label, style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        text = stringResource(
+                            R.string.storage_free,
+                            formatBytes(volume.freeBytes),
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 Text(
-                    text = stringResource(
-                        R.string.storage_usage,
-                        formatBytes(volume.usedBytes),
-                        formatBytes(volume.totalBytes),
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp),
+                    text = formatPercent(volume.usedBytes, volume.totalBytes),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
+
+            LinearProgressIndicator(
+                progress = { volume.usedFraction },
+                strokeCap = StrokeCap.Round,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 14.dp)
+                    .height(8.dp),
+            )
+            Text(
+                text = stringResource(
+                    R.string.storage_usage,
+                    formatBytes(volume.usedBytes),
+                    formatBytes(volume.totalBytes),
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp),
+            )
         }
     }
 }
@@ -206,35 +253,40 @@ private fun CategoryGrid(
 ) {
     // LazyColumn içinde olduğu için iç içe kaydırma yaratmayan basit satırlar.
     val entries = FileCategory.entries
-    Column(modifier = Modifier.padding(horizontal = 8.dp)) {
-        Row(modifier = Modifier.fillMaxWidth()) {
-            CategoryTile(
-                icon = Icons.Outlined.Download,
-                label = stringResource(R.string.category_downloads),
-                onClick = onOpenDownloads,
-                modifier = Modifier.weight(1f),
-            )
-            entries.take(2).forEach { category ->
-                CategoryTile(
-                    icon = category.icon(),
-                    label = stringResource(category.labelRes()),
-                    onClick = { onOpenCategory(category) },
-                    modifier = Modifier.weight(1f),
-                )
-            }
+    val tiles = buildList {
+        add(Triple(Icons.Outlined.Download, R.string.category_downloads, onOpenDownloads))
+        entries.forEach { category ->
+            add(Triple(category.icon(), category.labelRes()) { onOpenCategory(category) })
         }
-        Row(modifier = Modifier.fillMaxWidth()) {
-            entries.drop(2).forEach { category ->
-                CategoryTile(
-                    icon = category.icon(),
-                    label = stringResource(category.labelRes()),
-                    onClick = { onOpenCategory(category) },
-                    modifier = Modifier.weight(1f),
-                )
+    }
+
+    Column(
+        modifier = Modifier.padding(horizontal = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        tiles.chunked(COLUMNS).forEach { row ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                row.forEach { (icon, labelRes, onClick) ->
+                    CategoryTile(
+                        icon = icon,
+                        label = stringResource(labelRes),
+                        onClick = onClick,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                // Son satır eksik kalırsa kutular genişlemesin diye boşluk bırakılıyor.
+                repeat(COLUMNS - row.size) {
+                    Box(modifier = Modifier.weight(1f))
+                }
             }
         }
     }
 }
+
+private const val COLUMNS = 4
 
 @Composable
 private fun CategoryTile(
@@ -245,18 +297,26 @@ private fun CategoryTile(
 ) {
     Column(
         modifier = modifier
+            .clip(RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .clickable(onClick = onClick)
-            .padding(vertical = 12.dp),
+            .padding(vertical = 14.dp, horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        ItemIcon(icon = icon)
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(26.dp),
+            tint = MaterialTheme.colorScheme.primary,
+        )
         Text(
             text = label,
             style = MaterialTheme.typography.labelMedium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 6.dp),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 8.dp),
         )
     }
 }
