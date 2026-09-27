@@ -19,4 +19,9 @@ object Routes {
     const val SEARCH = "search/{$ARG_PATH}"
 
     fun search(path: String): String = "search/${Uri.encode(path)}"
+
+    const val ARG_CATEGORY = "category"
+    const val CATEGORY = "category/{$ARG_CATEGORY}"
+
+    fun category(name: String): String = "category/$name"
 }

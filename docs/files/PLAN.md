@@ -189,10 +189,20 @@ Bir görev bitince buradaki kutuyu işaretle. Görevler sıralıdır; bağımlı
     kuruluyor, ama gerçek cihazda bir kez denenmesi gerekiyor.
   - 9 yeni test (repoda 111).
 
-- [ ] **F-1.10 — Ana ekran**
-  - Depolama kartları (`StorageManager.storageVolumes` → `StorageVolumeInfo`, `:core:storage`)
-  - Kategoriler (MediaStore MIME sorguları), son değişenler
-  - Kabul: SD kart takılıyken ikinci kart görünüyor.
+- [x] **F-1.10 — Ana ekran**
+  - Depolama kartları: doluluk çubuğu + "x / y kullanıldı"; tıklayınca o birimin kökü açılır
+  - Kategoriler: İndirilenler (gerçek klasör) + Görseller/Video/Ses/Belgeler/APK/Arşivler
+    (MediaStore sorgusu → `CategoryScreen`)
+  - Son değişenler: son 7 günde değişmiş 20 dosya
+  - **Not:** çıkarılabilir birimin kökü `StorageManager`'dan doğrudan alınamıyor;
+    `getExternalFilesDirs` sonucundan `/Android/data/<paket>/files` kırpılarak bulunuyor.
+    API 26'dan beri çalışan tek taşınabilir yol bu. Ad ise API 30+'ta
+    `StorageVolume.getDescription()` ile, yoksa klasör adıyla veriliyor.
+  - **Not:** APK ve arşivler MediaStore'da tutarlı MIME türüyle indekslenmediği için
+    dosya adı uzantısına göre sorgulanıyor.
+  - Kabul: emülatörde iki kart da göründü — dahili depolama (2,3 GB / 5,8 GB) ve
+    SDCARD (68 KB / 510 MB). Kategoriler ve son değişenler de çizildi. ✅
+  - 4 yeni test (`StorageVolumeInfo` hesapları; repoda 115).
 
 - [ ] **F-1.11 — M1 cilası**
   - Boş durum ekranları, hata mesajları (Türkçe), `strings.xml` (tr varsayılan + `values-en`)

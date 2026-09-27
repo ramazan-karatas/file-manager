@@ -19,7 +19,6 @@
 
     <!-- Gezgin -->
     <string name="storage_internal">Dahili depolama</string>
-    <string name="storage_internal_subtitle">Cihazdaki dosyalara göz at</string>
     <string name="action_up">Üst klasör</string>
     <string name="action_view_list">Liste görünümü</string>
     <string name="action_view_grid">Izgara görünümü</string>
@@ -116,4 +115,15 @@
     <string name="action_clear">Temizle</string>
     <string name="search_placeholder">Bu klasörde ara</string>
     <string name="search_no_results">Sonuç bulunamadı</string>
+    <string name="storage_usage">%1$s / %2$s kullanıldı</string>
+    <string name="home_categories">Kategoriler</string>
+    <string name="home_recent">Son değişenler</string>
+    <string name="category_downloads">İndirilenler</string>
+    <string name="category_images">Görseller</string>
+    <string name="category_video">Video</string>
+    <string name="category_audio">Ses</string>
+    <string name="category_documents">Belgeler</string>
+    <string name="category_apk">APK</string>
+    <string name="category_archives">Arşivler</string>
+    <string name="category_empty">Bu kategoride dosya yok</string>
 </resources>

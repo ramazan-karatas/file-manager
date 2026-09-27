@@ -12,6 +12,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import dev.rk.systemapps.core.design.component.LoadingState
 import dev.rk.systemapps.files.ui.browser.BrowserRoute
+import dev.rk.systemapps.files.ui.category.CategoryRoute
 import dev.rk.systemapps.files.ui.home.HomeRoute
 import dev.rk.systemapps.files.ui.permission.PermissionRoute
 import dev.rk.systemapps.files.ui.search.SearchRoute
@@ -48,6 +49,9 @@ private fun FilesNavHost(startWithOnboarding: Boolean) {
         composable(Routes.HOME) {
             HomeRoute(
                 onOpenFolder = { path -> navController.navigate(Routes.browser(path)) },
+                onOpenCategory = { category ->
+                    navController.navigate(Routes.category(category.name))
+                },
             )
         }
 
@@ -61,6 +65,13 @@ private fun FilesNavHost(startWithOnboarding: Boolean) {
                 onNavigateToCrumb = navController::rebuildBrowserStack,
                 onSearch = { path -> navController.navigate(Routes.search(path)) },
             )
+        }
+
+        composable(
+            route = Routes.CATEGORY,
+            arguments = listOf(navArgument(Routes.ARG_CATEGORY) { type = NavType.StringType }),
+        ) {
+            CategoryRoute(onNavigateUp = { navController.navigateUp() })
         }
 
         composable(

@@ -6,6 +6,8 @@ import dev.rk.systemapps.core.common.result.Outcome
 import dev.rk.systemapps.files.domain.model.BrowserPrefs
 import dev.rk.systemapps.files.domain.model.SortBy
 import dev.rk.systemapps.files.ui.Routes
+import dev.rk.systemapps.core.storage.model.StorageVolumeInfo
+import dev.rk.systemapps.core.storage.volume.StorageLocations
 import dev.rk.systemapps.files.data.operation.FileOperationEngine
 import dev.rk.systemapps.files.data.operation.FileOperationManager
 import dev.rk.systemapps.files.data.operation.OperationServiceController
@@ -55,7 +57,10 @@ class BrowserViewModelTest {
         repository = repository,
         preferences = preferences,
         operations = operations,
-        storageLocations = { "/storage/emulated/0" },
+        storageLocations = object : StorageLocations {
+            override fun primaryExternalStorage() = "/storage/emulated/0"
+            override fun volumes() = emptyList<StorageVolumeInfo>()
+        },
         savedStateHandle = savedStateHandle,
     )
 

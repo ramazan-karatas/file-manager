@@ -19,7 +19,6 @@
 
     <!-- Browser -->
     <string name="storage_internal">Internal storage</string>
-    <string name="storage_internal_subtitle">Browse files on this device</string>
     <string name="action_up">Go up</string>
     <string name="action_view_list">List view</string>
     <string name="action_view_grid">Grid view</string>
@@ -121,4 +120,15 @@
     <string name="action_clear">Clear</string>
     <string name="search_placeholder">Search in this folder</string>
     <string name="search_no_results">No results</string>
+    <string name="storage_usage">%1$s of %2$s used</string>
+    <string name="home_categories">Categories</string>
+    <string name="home_recent">Recent</string>
+    <string name="category_downloads">Downloads</string>
+    <string name="category_images">Images</string>
+    <string name="category_video">Video</string>
+    <string name="category_audio">Audio</string>
+    <string name="category_documents">Documents</string>
+    <string name="category_apk">APK</string>
+    <string name="category_archives">Archives</string>
+    <string name="category_empty">No files in this category</string>
 </resources>

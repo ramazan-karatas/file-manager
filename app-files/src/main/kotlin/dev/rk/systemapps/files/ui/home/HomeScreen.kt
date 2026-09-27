@@ -1,33 +1,64 @@
 package dev.rk.systemapps.files.ui.home
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Android
+import androidx.compose.material.icons.outlined.Archive
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.MusicNote
+import androidx.compose.material.icons.outlined.SdCard
 import androidx.compose.material.icons.outlined.Smartphone
+import androidx.compose.material.icons.outlined.Videocam
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.rk.systemapps.core.common.format.formatBytes
+import dev.rk.systemapps.core.common.format.formatDate
 import dev.rk.systemapps.core.design.component.AppListItem
 import dev.rk.systemapps.core.design.component.ItemIcon
 import dev.rk.systemapps.core.design.theme.SystemAppsTheme
+import dev.rk.systemapps.core.storage.model.StorageVolumeInfo
 import dev.rk.systemapps.core.storage.permission.StorageAccessLevel
 import dev.rk.systemapps.core.storage.permission.launchManageAllFilesSettings
 import dev.rk.systemapps.files.R
+import dev.rk.systemapps.files.domain.model.FileCategory
+import dev.rk.systemapps.files.domain.model.FileNode
+import dev.rk.systemapps.files.ui.browser.FileActions
+import dev.rk.systemapps.files.ui.browser.FileThumbnail
 import dev.rk.systemapps.files.ui.component.AccessWarningBanner
 
 @Composable
 fun HomeRoute(
     onOpenFolder: (String) -> Unit,
+    onOpenCategory: (FileCategory) -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -42,6 +73,8 @@ fun HomeRoute(
         uiState = uiState,
         onGrantAccess = { context.launchManageAllFilesSettings() },
         onOpenFolder = onOpenFolder,
+        onOpenCategory = onOpenCategory,
+        onOpenFile = { node -> FileActions.open(context, node) },
     )
 }
 
@@ -51,51 +84,218 @@ fun HomeScreen(
     uiState: HomeUiState,
     onGrantAccess: () -> Unit,
     onOpenFolder: (String) -> Unit,
+    onOpenCategory: (FileCategory) -> Unit,
+    onOpenFile: (FileNode) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
         modifier = modifier,
-        topBar = {
-            TopAppBar(title = { Text(stringResource(R.string.home_title)) })
-        },
+        topBar = { TopAppBar(title = { Text(stringResource(R.string.home_title)) }) },
     ) { innerPadding ->
-        Column(modifier = Modifier.padding(innerPadding)) {
+        LazyColumn(modifier = Modifier.padding(innerPadding)) {
             if (uiState.showLimitedAccessBanner) {
-                AccessWarningBanner(onGrantAccess = onGrantAccess)
+                item { AccessWarningBanner(onGrantAccess = onGrantAccess) }
             }
-            // F-1.10'da burası depolama kartları, kategoriler ve son değişenlerle dolacak.
-            // Şimdilik gezgine tek giriş noktası.
-            AppListItem(
-                title = stringResource(R.string.storage_internal),
-                subtitle = stringResource(R.string.storage_internal_subtitle),
-                leading = { ItemIcon(Icons.Outlined.Smartphone) },
-                onClick = { onOpenFolder(uiState.storageRoot) },
-            )
+
+            items(items = uiState.volumes, key = { it.id }) { volume ->
+                StorageCard(volume = volume, onClick = { onOpenFolder(volume.path) })
+            }
+
+            item {
+                SectionTitle(stringResource(R.string.home_categories))
+                CategoryGrid(
+                    onOpenCategory = onOpenCategory,
+                    onOpenDownloads = { onOpenFolder("${uiState.storageRoot}/Download") },
+                )
+            }
+
+            if (uiState.recent.isNotEmpty()) {
+                item { SectionTitle(stringResource(R.string.home_recent)) }
+                items(items = uiState.recent, key = { it.id }) { node ->
+                    AppListItem(
+                        title = node.name,
+                        subtitle = "${formatBytes(node.size)} · ${formatDate(node.lastModified)}",
+                        leading = { FileThumbnail(node = node) },
+                        onClick = { onOpenFile(node) },
+                    )
+                }
+            }
         }
     }
 }
 
-@Preview(name = "Ana ekran — tam erişim")
 @Composable
-private fun HomeScreenPreview() {
-    SystemAppsTheme {
-        HomeScreen(
-            uiState = HomeUiState(accessLevel = StorageAccessLevel.FULL),
-            onGrantAccess = {},
-            onOpenFolder = {},
+private fun SectionTitle(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(start = 16.dp, top = 20.dp, bottom = 4.dp),
+    )
+}
+
+@Composable
+private fun StorageCard(volume: StorageVolumeInfo, onClick: () -> Unit) {
+    // Birincil birimin adı sistemden gelmiyor; yerelleştirilmiş metin burada veriliyor.
+    val label = volume.label.ifEmpty { stringResource(R.string.storage_internal) }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .clickable(onClick = onClick),
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = if (volume.isRemovable) {
+                    Icons.Outlined.SdCard
+                } else {
+                    Icons.Outlined.Smartphone
+                },
+                contentDescription = null,
+                modifier = Modifier.size(32.dp),
+                tint = MaterialTheme.colorScheme.primary,
+            )
+            Column(modifier = Modifier.padding(start = 16.dp)) {
+                Text(text = label, style = MaterialTheme.typography.titleMedium)
+                LinearProgressIndicator(
+                    progress = { volume.usedFraction },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                )
+                Text(
+                    text = stringResource(
+                        R.string.storage_usage,
+                        formatBytes(volume.usedBytes),
+                        formatBytes(volume.totalBytes),
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CategoryGrid(
+    onOpenCategory: (FileCategory) -> Unit,
+    onOpenDownloads: () -> Unit,
+) {
+    // LazyColumn içinde olduğu için iç içe kaydırma yaratmayan basit satırlar.
+    val entries = FileCategory.entries
+    Column(modifier = Modifier.padding(horizontal = 8.dp)) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            CategoryTile(
+                icon = Icons.Outlined.Download,
+                label = stringResource(R.string.category_downloads),
+                onClick = onOpenDownloads,
+                modifier = Modifier.weight(1f),
+            )
+            entries.take(2).forEach { category ->
+                CategoryTile(
+                    icon = category.icon(),
+                    label = stringResource(category.labelRes()),
+                    onClick = { onOpenCategory(category) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+        Row(modifier = Modifier.fillMaxWidth()) {
+            entries.drop(2).forEach { category ->
+                CategoryTile(
+                    icon = category.icon(),
+                    label = stringResource(category.labelRes()),
+                    onClick = { onOpenCategory(category) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CategoryTile(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        ItemIcon(icon = icon)
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 6.dp),
         )
     }
 }
 
-@Preview(name = "Ana ekran — sınırlı mod")
-@Preview(name = "Ana ekran — sınırlı mod, koyu", uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
+internal fun FileCategory.icon(): ImageVector = when (this) {
+    FileCategory.IMAGES -> Icons.Outlined.Image
+    FileCategory.VIDEO -> Icons.Outlined.Videocam
+    FileCategory.AUDIO -> Icons.Outlined.MusicNote
+    FileCategory.DOCUMENTS -> Icons.Outlined.Description
+    FileCategory.APK -> Icons.Outlined.Android
+    FileCategory.ARCHIVES -> Icons.Outlined.Archive
+}
+
+internal fun FileCategory.labelRes(): Int = when (this) {
+    FileCategory.IMAGES -> R.string.category_images
+    FileCategory.VIDEO -> R.string.category_video
+    FileCategory.AUDIO -> R.string.category_audio
+    FileCategory.DOCUMENTS -> R.string.category_documents
+    FileCategory.APK -> R.string.category_apk
+    FileCategory.ARCHIVES -> R.string.category_archives
+}
+
+@Preview(name = "Ana ekran")
+@Preview(name = "Ana ekran — koyu", uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
 @Composable
-private fun HomeScreenLimitedPreview() {
+private fun HomeScreenPreview() {
     SystemAppsTheme {
         HomeScreen(
-            uiState = HomeUiState(accessLevel = StorageAccessLevel.LIMITED),
+            uiState = HomeUiState(
+                accessLevel = StorageAccessLevel.FULL,
+                storageRoot = "/storage/emulated/0",
+                volumes = listOf(
+                    StorageVolumeInfo(
+                        id = "/storage/emulated/0",
+                        label = "",
+                        path = "/storage/emulated/0",
+                        totalBytes = 128_000_000_000,
+                        freeBytes = 42_000_000_000,
+                        isRemovable = false,
+                        isPrimary = true,
+                    ),
+                    StorageVolumeInfo(
+                        id = "/storage/1A2B",
+                        label = "SD kart",
+                        path = "/storage/1A2B",
+                        totalBytes = 64_000_000_000,
+                        freeBytes = 60_000_000_000,
+                        isRemovable = true,
+                        isPrimary = false,
+                    ),
+                ),
+            ),
             onGrantAccess = {},
             onOpenFolder = {},
+            onOpenCategory = {},
+            onOpenFile = {},
         )
     }
 }
