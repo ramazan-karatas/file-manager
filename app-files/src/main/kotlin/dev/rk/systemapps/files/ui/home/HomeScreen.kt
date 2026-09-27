@@ -3,7 +3,7 @@ package dev.rk.systemapps.files.ui.home
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Folder
+import androidx.compose.material.icons.outlined.Smartphone
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -17,15 +17,20 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import dev.rk.systemapps.core.design.component.EmptyState
+import dev.rk.systemapps.core.design.component.AppListItem
+import dev.rk.systemapps.core.design.component.ItemIcon
 import dev.rk.systemapps.core.design.theme.SystemAppsTheme
 import dev.rk.systemapps.core.storage.permission.StorageAccessLevel
 import dev.rk.systemapps.core.storage.permission.launchManageAllFilesSettings
+import dev.rk.systemapps.core.storage.volume.StoragePaths
 import dev.rk.systemapps.files.R
 import dev.rk.systemapps.files.ui.component.AccessWarningBanner
 
 @Composable
-fun HomeRoute(viewModel: HomeViewModel = hiltViewModel()) {
+fun HomeRoute(
+    onOpenFolder: (String) -> Unit,
+    viewModel: HomeViewModel = hiltViewModel(),
+) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
@@ -37,6 +42,7 @@ fun HomeRoute(viewModel: HomeViewModel = hiltViewModel()) {
     HomeScreen(
         uiState = uiState,
         onGrantAccess = { context.launchManageAllFilesSettings() },
+        onOpenFolder = onOpenFolder,
     )
 }
 
@@ -45,6 +51,7 @@ fun HomeRoute(viewModel: HomeViewModel = hiltViewModel()) {
 fun HomeScreen(
     uiState: HomeUiState,
     onGrantAccess: () -> Unit,
+    onOpenFolder: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -57,11 +64,13 @@ fun HomeScreen(
             if (uiState.showLimitedAccessBanner) {
                 AccessWarningBanner(onGrantAccess = onGrantAccess)
             }
-            // F-1.10'da depolama kartları, kategoriler ve son değişenler buraya gelecek.
-            EmptyState(
-                icon = Icons.Outlined.Folder,
-                title = stringResource(R.string.scaffold_placeholder_title),
-                description = stringResource(R.string.scaffold_placeholder_description),
+            // F-1.10'da burası depolama kartları, kategoriler ve son değişenlerle dolacak.
+            // Şimdilik gezgine tek giriş noktası.
+            AppListItem(
+                title = stringResource(R.string.storage_internal),
+                subtitle = stringResource(R.string.storage_internal_subtitle),
+                leading = { ItemIcon(Icons.Outlined.Smartphone) },
+                onClick = { onOpenFolder(StoragePaths.primaryExternalStorage()) },
             )
         }
     }
@@ -74,6 +83,7 @@ private fun HomeScreenPreview() {
         HomeScreen(
             uiState = HomeUiState(accessLevel = StorageAccessLevel.FULL),
             onGrantAccess = {},
+            onOpenFolder = {},
         )
     }
 }
@@ -86,6 +96,7 @@ private fun HomeScreenLimitedPreview() {
         HomeScreen(
             uiState = HomeUiState(accessLevel = StorageAccessLevel.LIMITED),
             onGrantAccess = {},
+            onOpenFolder = {},
         )
     }
 }

@@ -2,8 +2,6 @@
 <resources>
     <string name="app_name">Dosyalar</string>
     <string name="home_title">Dosyalar</string>
-    <string name="scaffold_placeholder_title">İskelet hazır</string>
-    <string name="scaffold_placeholder_description">Gezgin ekranı F-1.3 görevinde gelecek.</string>
 
     <!-- İzin / onboarding -->
     <string name="permission_title">Dosyalarına erişim</string>
@@ -18,4 +16,17 @@
     <!-- Sınırlı mod bandı -->
     <string name="banner_limited_mode">Sınırlı mod: yalnızca medya dosyaları görünüyor.</string>
     <string name="banner_limited_mode_action">İzin ver</string>
+
+    <!-- Gezgin -->
+    <string name="storage_internal">Dahili depolama</string>
+    <string name="storage_internal_subtitle">Cihazdaki dosyalara göz at</string>
+    <string name="action_up">Üst klasör</string>
+    <string name="action_view_list">Liste görünümü</string>
+    <string name="action_view_grid">Izgara görünümü</string>
+    <string name="action_retry">Yeniden dene</string>
+    <string name="browser_empty_title">Bu klasör boş</string>
+    <string name="browser_empty_description">Burada gösterilecek dosya yok.</string>
+    <string name="browser_error_not_found">Klasör bulunamadı</string>
+    <string name="browser_error_not_readable">Klasör okunamadı</string>
+    <string name="browser_error_unknown">Klasör açılırken bir sorun oluştu</string>
 </resources>

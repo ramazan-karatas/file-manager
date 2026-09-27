@@ -4,10 +4,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import dev.rk.systemapps.core.design.component.LoadingState
+import dev.rk.systemapps.files.ui.browser.BrowserRoute
 import dev.rk.systemapps.files.ui.home.HomeRoute
 import dev.rk.systemapps.files.ui.permission.PermissionRoute
 
@@ -39,8 +43,31 @@ private fun FilesNavHost(startWithOnboarding: Boolean) {
                 },
             )
         }
+
         composable(Routes.HOME) {
-            HomeRoute()
+            HomeRoute(
+                onOpenFolder = { path -> navController.navigate(Routes.browser(path)) },
+            )
+        }
+
+        composable(
+            route = Routes.BROWSER,
+            arguments = listOf(navArgument(Routes.ARG_PATH) { type = NavType.StringType }),
+        ) {
+            BrowserRoute(
+                onNavigateToFolder = { path -> navController.navigate(Routes.browser(path)) },
+                onNavigateUp = { navController.navigateUp() },
+                onNavigateToCrumb = navController::rebuildBrowserStack,
+            )
         }
     }
+}
+
+/**
+ * Breadcrumb'tan bir üst klasöre atlarken geri yığını kökten hedefe kadar yeniden kurulur;
+ * böylece geri tuşu yine bir üst klasöre gider (docs/files/SPEC.md §3.2).
+ */
+private fun NavHostController.rebuildBrowserStack(paths: List<String>) {
+    popBackStack(Routes.HOME, inclusive = false)
+    paths.forEach { path -> navigate(Routes.browser(path)) }
 }

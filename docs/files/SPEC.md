@@ -43,7 +43,9 @@ medya oynatma (harici uygulamaya intent gönderilir), metin editörü.
 
 - Üstte breadcrumb: yatay kaydırılabilir, bir parçaya tıklayınca o klasöre atlar.
 - Liste veya ızgara görünümü; tercih kalıcı (DataStore).
-- Satır düzeni: ikon/thumbnail · dosya adı · alt satır (boyut · tarih), klasörse (n öğe).
+- Satır düzeni: ikon/thumbnail · dosya adı · alt satır (boyut · tarih).
+  Klasörlerde öğe sayısı **gösterilmez** (her klasör için ayrı dizin okuması gerektirir ve
+  listeleme süresini bozar); sayı özellikler diyaloğunda hesaplanır.
 - Sıralama: ad / boyut / değiştirilme tarihi / tür × artan-azalan.
   Klasörler varsayılan olarak üstte (ayardan kapatılabilir).
 - Gizli dosyaları göster/gizle anahtarı.

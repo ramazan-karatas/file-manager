@@ -1,10 +1,18 @@
 package dev.rk.systemapps.files.ui
 
+import android.net.Uri
+
 /**
- * Rota sabitleri. F-1.3'te gezgin, F-1.9'da arama eklenecek;
- * argümanlı rotalara geçilirken tip güvenli (kotlinx.serialization) sürüme taşınacak.
+ * Rota sabitleri. Argümanlı rotalara geçilirken tip güvenli
+ * (kotlinx.serialization) sürüme taşınacak.
  */
 object Routes {
     const val PERMISSION = "permission"
     const val HOME = "home"
+
+    const val ARG_PATH = "path"
+    const val BROWSER = "browser/{$ARG_PATH}"
+
+    /** Dosya yolları `/` içerdiği için rotaya kodlanarak konur. */
+    fun browser(path: String): String = "browser/${Uri.encode(path)}"
 }

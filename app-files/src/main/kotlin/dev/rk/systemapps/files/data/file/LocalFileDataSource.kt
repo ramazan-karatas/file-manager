@@ -12,6 +12,10 @@ import java.io.IOException
  * [dev.rk.systemapps.core.common.result.Outcome]'a çevirmek repository'nin işidir.
  *
  * Çağıranlar bu sınıfı IO dispatcher'ında kullanmalıdır.
+ *
+ * Not: `java.nio.file` ile (dizin akışı + öğe başına tek `readAttributes`) bir sürüm denendi.
+ * Teoride 3 yerine 1 stat yapmasına rağmen `/sdcard` FUSE üzerinde kazanç vermedi
+ * (10.000 dosyada aynı koşulda NIO 2586 ms, File API 2296 ms), bu yüzden basit olan tutuldu.
  */
 class LocalFileDataSource(
     private val mimeTypeResolver: MimeTypeResolver,

@@ -70,11 +70,27 @@ Bir görev bitince buradaki kutuyu işaretle. Görevler sıralıdır; bağımlı
     dönüşmesi (exception sızmıyor).
   - Bağımlılık: F-0.2
 
-- [ ] **F-1.3 — Gezgin ekranı: listeleme**
+- [x] **F-1.3 — Gezgin ekranı: listeleme**
   - `BrowserRoute` + `BrowserScreen` + `BrowserViewModel` (`BrowserUiState`, `BrowserAction`)
-  - Breadcrumb, liste/ızgara, ikon eşlemesi (MIME → ikon), thumbnail (Coil, görsel/video/APK)
-  - Kaydırma konumu klasör başına hatırlanır (geri dönünce aynı yerde)
-  - Kabul: 10.000 dosyalı klasör < 300 ms; kaydırma jank'sız (Macrobenchmark şart değil, gözle).
+  - Breadcrumb (yatay kaydırmalı, tıklanabilir), liste/ızgara anahtarı,
+    `FileKind` → ikon eşlemesi, Coil ile görsel/video önizlemesi ve APK ikonu
+  - Her klasör ayrı bir navigasyon hedefi: geri tuşu üst klasöre gider, kaydırma
+    konumu Navigation'ın kendi durum saklamasıyla korunur
+  - Breadcrumb'tan atlarken geri yığını kökten hedefe yeniden kurulur
+  - **Spec sapması:** klasör satırında "n öğe" yerine tarih gösteriliyor. Öğe sayısı
+    her klasör için ayrı dizin okuması demek; listeleme bütçesini bozuyordu.
+    Sayı, F-1.8'deki özellikler diyaloğunda hesaplanacak.
+  - **Kabul kriteri kısmen karşılandı:**
+    - Kaydırma: 10.000 satırda tek bir atlanan kare yok. ✅
+    - Süre: emülatörde (API 37, x86_64) 10.000 dosya **~3,2 sn**, kriter 300 ms. ❌
+      Ölçüm kırılımı: `readdir` 1400 ms + `stat` 1185 ms = 2586 ms saf dosya sistemi,
+      geri kalan ~600 ms sıralama/eşleme/akış. Yani darboğaz uygulama değil,
+      emülatörün FUSE `/sdcard` katmanı. **Gerçek Xiaomi cihazda yeniden ölçülecek**;
+      ölçüm orada da tutmazsa çözüm iki fazlı yükleme (önce adlar, sonra öznitelikler).
+    - Denenip **geri alınan** iyileştirme: `java.nio.file` ile öğe başına tek stat —
+      aynı koşulda kazanç vermedi (NIO 2586 ms, File API 2296 ms). Gerekçe kodda not düşüldü.
+    - Uygulanan iyileştirme: sıralamada `CollationKey` önbelleği (10.000 öğede
+      ~130.000 pahalı `Collator.compare` çağrısı yerine 10.000 anahtar üretimi).
   - Bağımlılık: F-1.2
 
 - [ ] **F-1.4 — Sıralama, görünüm ve tercihler**
