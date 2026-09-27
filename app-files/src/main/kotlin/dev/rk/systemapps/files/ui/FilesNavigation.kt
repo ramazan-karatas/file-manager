@@ -15,4 +15,8 @@ object Routes {
 
     /** Dosya yolları `/` içerdiği için rotaya kodlanarak konur. */
     fun browser(path: String): String = "browser/${Uri.encode(path)}"
+
+    const val SEARCH = "search/{$ARG_PATH}"
+
+    fun search(path: String): String = "search/${Uri.encode(path)}"
 }

@@ -112,4 +112,8 @@
         <item quantity="other">%1$d öğe</item>
     </plurals>
     <string name="action_more">Daha fazla</string>
+    <string name="action_search">Ara</string>
+    <string name="action_clear">Temizle</string>
+    <string name="search_placeholder">Bu klasörde ara</string>
+    <string name="search_no_results">Sonuç bulunamadı</string>
 </resources>

@@ -172,11 +172,22 @@ Bir görev bitince buradaki kutuyu işaretle. Görevler sıralıdır; bağımlı
   - **F-1.11'e not:** beyaz/açık renkli görsellerin küçük resmi açık zeminde görünmüyor;
     thumbnail'lere ince bir çerçeve veya zemin gerekiyor.
 
-- [ ] **F-1.9 — Arama**
-  - `SearchUseCase`: özyinelemeli, akışlı (`Flow<FileNode>`), iptal edilebilir,
-    canonical path seti ile döngü koruması
-  - `SearchScreen`, 250 ms debounce, sonuçtan klasöre atlama
-  - Kabul: symlink döngülü ağaçta bitiyor; sorgu değişince eski tarama iptal oluyor.
+- [x] **F-1.9 — Arama**
+  - `LocalFileDataSource.search()`: yığın tabanlı özyinelemeli tarama, `Flow<FileNode>`,
+    sonuçlar bulundukça yayılıyor, canonical yol setiyle symlink döngüsü koruması
+  - `SearchViewModel`: 250 ms debounce + `flatMapLatest` (yeni sorgu öncekini iptal eder)
+  - `SearchScreen`: gezgin üst çubuğundaki arama ikonundan açılıyor, sonuçta konum
+    gösteriliyor, klasöre atlama ve dosyayı açma çalışıyor
+  - Kabul:
+    - Sorgu değişince eski tarama iptal oluyor — ViewModel testiyle doğrulandı
+      (hızlı yazmada repository'ye yalnızca son sorgu gidiyor). ✅
+    - Symlink döngüsü — testi yazıldı ama **Windows'ta atlanıyor**
+      (`Files.createSymbolicLink` yönetici hakkı istiyor). Linux/CI'da çalışacak;
+      `/sdcard` FUSE olduğu için emülatörde de symlink kurulamadı. ⚠️
+  - **Arama ekranı cihazda çalıştırılamadı:** emülatör oturum sonunda yanıt vermez
+    hâle geldi. Ekran 9 birim testiyle kaplı ve zaten kanıtlanmış bileşenlerden
+    kuruluyor, ama gerçek cihazda bir kez denenmesi gerekiyor.
+  - 9 yeni test (repoda 111).
 
 - [ ] **F-1.10 — Ana ekran**
   - Depolama kartları (`StorageManager.storageVolumes` → `StorageVolumeInfo`, `:core:storage`)

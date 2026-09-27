@@ -117,4 +117,8 @@
         <item quantity="other">%1$d items</item>
     </plurals>
     <string name="action_more">More</string>
+    <string name="action_search">Search</string>
+    <string name="action_clear">Clear</string>
+    <string name="search_placeholder">Search in this folder</string>
+    <string name="search_no_results">No results</string>
 </resources>

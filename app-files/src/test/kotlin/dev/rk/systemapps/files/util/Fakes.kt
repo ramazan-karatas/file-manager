@@ -57,6 +57,17 @@ class FakeFileRepository(nodes: List<FileNode> = emptyList()) : FileRepository {
         nameCalls += Triple("touch", parentId, name)
         return nameResult
     }
+
+    /** Arama sonuçları; sorgu adın içinde geçen düğümler döner. */
+    var searchSource: List<FileNode> = emptyList()
+    val searchQueries = mutableListOf<String>()
+
+    override fun search(rootId: String, query: String): Flow<FileNode> = flow {
+        searchQueries += query
+        if (query.isBlank()) return@flow
+        searchSource.filter { it.name.contains(query, ignoreCase = true) }
+            .forEach { emit(it) }
+    }
 }
 
 class FakeFilesPreferences(

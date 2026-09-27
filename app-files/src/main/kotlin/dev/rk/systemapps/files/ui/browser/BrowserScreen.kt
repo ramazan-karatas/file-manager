@@ -41,6 +41,7 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Deselect
 import androidx.compose.material.icons.outlined.FolderOff
 import androidx.compose.material.icons.outlined.GridView
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.SelectAll
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -96,6 +97,7 @@ import dev.rk.systemapps.files.domain.model.SortBy
 fun BrowserRoute(
     onNavigateToFolder: (String) -> Unit,
     onNavigateUp: () -> Unit,
+    onSearch: (String) -> Unit,
     /** Kökten hedefe kadar olan yollar; geri yığını buna göre yeniden kurulur. */
     onNavigateToCrumb: (List<String>) -> Unit,
     viewModel: BrowserViewModel = hiltViewModel(),
@@ -166,6 +168,7 @@ fun BrowserRoute(
             }
         },
         onNavigateUp = onNavigateUp,
+        onSearch = { onSearch(uiState.path) },
         onCrumbClick = { crumb ->
             val index = uiState.crumbs.indexOf(crumb)
             if (index >= 0 && index != uiState.crumbs.lastIndex) {
@@ -186,6 +189,7 @@ fun BrowserScreen(
     onItemClick: (FileNode) -> Unit,
     onShare: (List<FileNode>) -> Unit,
     onNavigateUp: () -> Unit,
+    onSearch: () -> Unit,
     onCrumbClick: (Crumb) -> Unit,
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
@@ -340,6 +344,12 @@ fun BrowserScreen(
                         }
                     },
                     actions = {
+                        IconButton(onClick = onSearch) {
+                            Icon(
+                                imageVector = Icons.Outlined.Search,
+                                contentDescription = stringResource(R.string.action_search),
+                            )
+                        }
                         SortMenu(prefs = uiState.prefs, onAction = onAction)
                         IconButton(onClick = { onAction(BrowserAction.ToggleViewMode) }) {
                             Icon(
@@ -675,6 +685,7 @@ private fun BrowserScreenPreview() {
             onItemClick = {},
             onShare = {},
             onNavigateUp = {},
+            onSearch = {},
             onCrumbClick = {},
         )
     }
@@ -691,6 +702,7 @@ private fun BrowserScreenSelectionPreview() {
             onItemClick = {},
             onShare = {},
             onNavigateUp = {},
+            onSearch = {},
             onCrumbClick = {},
         )
     }

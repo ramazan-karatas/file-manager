@@ -35,4 +35,7 @@ interface FileRepository {
     suspend fun createDirectory(parentId: String, name: String): Outcome<FileNode>
 
     suspend fun createFile(parentId: String, name: String): Outcome<FileNode>
+
+    /** Alt klasörler dâhil arama; sonuçlar bulundukça yayılır, akış iptal edilebilir. */
+    fun search(rootId: String, query: String): Flow<FileNode>
 }

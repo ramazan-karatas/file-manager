@@ -9,6 +9,7 @@ import dev.rk.systemapps.files.domain.model.FileNode
 import dev.rk.systemapps.files.domain.model.ListingOptions
 import dev.rk.systemapps.files.domain.repository.FileRepository
 import java.io.FileNotFoundException
+import java.util.Locale
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
@@ -51,4 +52,7 @@ class FileRepositoryImpl(
 
     override suspend fun createFile(parentId: String, name: String): Outcome<FileNode> =
         withContext(dispatchers.io) { outcomeOf { dataSource.createFile(parentId, name) } }
+
+    override fun search(rootId: String, query: String): Flow<FileNode> =
+        dataSource.search(rootId, query, Locale.getDefault()).flowOn(dispatchers.io)
 }

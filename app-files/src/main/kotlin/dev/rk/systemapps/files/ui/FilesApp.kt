@@ -14,6 +14,7 @@ import dev.rk.systemapps.core.design.component.LoadingState
 import dev.rk.systemapps.files.ui.browser.BrowserRoute
 import dev.rk.systemapps.files.ui.home.HomeRoute
 import dev.rk.systemapps.files.ui.permission.PermissionRoute
+import dev.rk.systemapps.files.ui.search.SearchRoute
 
 @Composable
 fun FilesApp(viewModel: FilesAppViewModel = hiltViewModel()) {
@@ -58,6 +59,17 @@ private fun FilesNavHost(startWithOnboarding: Boolean) {
                 onNavigateToFolder = { path -> navController.navigate(Routes.browser(path)) },
                 onNavigateUp = { navController.navigateUp() },
                 onNavigateToCrumb = navController::rebuildBrowserStack,
+                onSearch = { path -> navController.navigate(Routes.search(path)) },
+            )
+        }
+
+        composable(
+            route = Routes.SEARCH,
+            arguments = listOf(navArgument(Routes.ARG_PATH) { type = NavType.StringType }),
+        ) {
+            SearchRoute(
+                onOpenFolder = { path -> navController.navigate(Routes.browser(path)) },
+                onNavigateUp = { navController.navigateUp() },
             )
         }
     }

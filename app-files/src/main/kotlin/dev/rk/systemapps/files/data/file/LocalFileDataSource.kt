@@ -9,6 +9,11 @@ import dev.rk.systemapps.files.domain.model.LocalFileNode
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
+import java.util.Locale
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
 /**
  * Dosya sistemine doğrudan erişen veri kaynağı. Hata durumunda exception fırlatır;
@@ -46,6 +51,40 @@ class LocalFileDataSource(
     }
 
     fun exists(path: String): Boolean = File(path).exists()
+
+    /**
+     * Alt klasörler dâhil ada göre arama. Sonuçlar bulundukça yayılır ki liste
+     * tarama bitmeden dolmaya başlasın.
+     *
+     * Sembolik bağlantı döngülerine karşı ziyaret edilen klasörlerin canonical yolları
+     * tutulur; aksi hâlde `a -> b -> a` gibi bir ağaçta tarama hiç bitmez.
+     */
+    fun search(rootPath: String, query: String, locale: Locale): Flow<FileNode> = flow {
+        val needle = query.lowercase(locale)
+        if (needle.isBlank()) return@flow
+
+        val visited = HashSet<String>()
+        val stack = ArrayDeque<File>()
+        stack.addLast(File(rootPath))
+
+        while (stack.isNotEmpty()) {
+            currentCoroutineContext().ensureActive()
+            val directory = stack.removeLast()
+
+            val canonical = runCatching { directory.canonicalPath }.getOrNull() ?: continue
+            if (!visited.add(canonical)) continue
+
+            // Okunamayan klasör aramayı durdurmaz, atlanır.
+            val children = directory.listFiles() ?: continue
+            for (child in children) {
+                currentCoroutineContext().ensureActive()
+                if (child.name.lowercase(locale).contains(needle)) {
+                    emit(child.toNode())
+                }
+                if (child.isDirectory) stack.addLast(child)
+            }
+        }
+    }
 
     fun details(path: String): FileDetails {
         val file = File(path)
