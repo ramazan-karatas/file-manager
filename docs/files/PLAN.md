@@ -222,6 +222,13 @@ Bir görev bitince buradaki kutuyu işaretle. Görevler sıralıdır; bağımlı
 
 ---
 
+## Ölçüm — sunum için karşılaştırma
+
+- [ ] **B-1 — MIUI ile açılış süresi karşılaştırması.** Ayrı görev tanımı:
+      [BENCHMARK.md](BENCHMARK.md). Gerçek cihaz gerektirir, ayrı oturumda yapılacak.
+
+---
+
 ## M2 — Güçlü özellikler
 
 - [ ] **F-2.1 — Room kurulumu** (`bookmarks`, `trash_entries`, `dir_size_cache`)

@@ -13,6 +13,9 @@ Dağıtım: sideload APK (Play Store politikalarına uyma zorunluluğu yok).
 
 Mimari kararlar ve modül grafiği: [docs/00-architecture.md](docs/00-architecture.md)
 
+Sunum için MIUI ile karşılaştırmalı ölçüm: [docs/files/BENCHMARK.md](docs/files/BENCHMARK.md)
+(ayrı oturumda, gerçek cihazla yapılacak)
+
 ## Agent için çalışma kuralları
 
 1. **Önce spec'i oku.** Bir göreve başlamadan önce ilgili `SPEC.md` + `PLAN.md`
