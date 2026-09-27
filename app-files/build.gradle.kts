@@ -1,3 +1,5 @@
+import com.android.build.api.artifact.SingleArtifact
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -30,6 +32,8 @@ android {
 
     buildFeatures {
         compose = true
+        // Hakkında ekranı sürüm adını buradan okuyor.
+        buildConfig = true
     }
 
     compileOptions {
@@ -64,4 +68,38 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.coroutines.test)
     testImplementation(libs.turbine)
+}
+
+/**
+ * Bu uygulamanın reklamsızlık sözünün teknik karşılığı INTERNET izninin bulunmamasıdır.
+ * Kaynak manifest'e bakmak yetmez — bir bağımlılık da izni ekleyebilir — bu yüzden
+ * AGP'nin ürettiği **birleşmiş** manifest denetleniyor.
+ */
+abstract class VerifyNoInternetPermissionTask : DefaultTask() {
+
+    @get:InputFile
+    abstract val mergedManifest: RegularFileProperty
+
+    @TaskAction
+    fun verify() {
+        val manifest = mergedManifest.get().asFile
+        check(!manifest.readText().contains("android.permission.INTERNET")) {
+            "INTERNET izni birleşmiş manifest'e girmiş: ${manifest.absolutePath}. " +
+                "Bu uygulama ağa çıkmamalı (bkz. docs/00-architecture.md §5)."
+        }
+    }
+}
+
+androidComponents {
+    onVariants { variant ->
+        val suffix = variant.name.replaceFirstChar { it.uppercase() }
+        val verify = tasks.register<VerifyNoInternetPermissionTask>(
+            "verify${suffix}NoInternetPermission",
+        ) {
+            group = "verification"
+            description = "Birleşmiş manifest'te INTERNET izni olmadığını doğrular."
+            mergedManifest.set(variant.artifacts.get(SingleArtifact.MERGED_MANIFEST))
+        }
+        tasks.named("check").configure { dependsOn(verify) }
+    }
 }

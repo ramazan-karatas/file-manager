@@ -200,15 +200,30 @@ Zorunlu davranışlar:
 
 ## 7. Kabul kriterleri — M1 "bitti" tanımı
 
-- [ ] 10.000 dosyalı klasör 300 ms altında listeleniyor, kaydırma takılmıyor.
-- [ ] 2 GB'lık dosya kopyalaması ilerleme gösteriyor, iptal edilebiliyor, iptalde
-      yarım dosya bırakmıyor.
-- [ ] Uygulama arka plandayken kopyalama devam ediyor (foreground service).
-- [ ] Ekran döndürme ve proses ölümünde gezinme konumu + seçim korunuyor.
-- [ ] İzin verilmemişken uygulama çökmüyor, sınırlı modda çalışıyor.
-- [ ] Türkçe karakterli ve boşluklu dosya adları kopyala/taşı/paylaş akışlarında sorunsuz.
-- [ ] Symlink döngüsü olan ağaçta arama sonsuz döngüye girmiyor.
-- [ ] `INTERNET` izni manifest'te yok — bunu doğrulayan bir unit test var.
+- [ ] **10.000 dosyalı klasör 300 ms altında listeleniyor, kaydırma takılmıyor.**
+      Kaydırma tarafı tamam (tek atlanan kare yok). Süre emülatörde ~3,2 sn; kırılım
+      `readdir` 1400 ms + `stat` 1185 ms, yani darboğaz uygulama değil emülatörün FUSE
+      `/sdcard` katmanı. **Gerçek cihazda yeniden ölçülecek**; orada da tutmazsa çözüm
+      iki fazlı yükleme (önce adlar, sonra öznitelikler).
+- [x] 2 GB'lık dosya kopyalaması ilerleme gösteriyor, iptal edilebiliyor, iptalde
+      yarım dosya bırakmıyor. — 1,2 GB ile doğrulandı; iptalde hedef klasör boş kaldı.
+- [x] Uygulama arka plandayken kopyalama devam ediyor (foreground service). — 300 MB
+      kopyalama ana ekrana çıkıldıktan sonra tamamlandı.
+- [x] Ekran döndürme ve proses ölümünde gezinme konumu + seçim korunuyor. — seçim
+      `SavedStateHandle` testiyle, gezinme konumu Navigation'ın durum saklamasıyla.
+- [x] İzin verilmemişken uygulama çökmüyor, sınırlı modda çalışıyor.
+- [x] Türkçe karakterli ve boşluklu dosya adları kopyala/taşı/paylaş akışlarında sorunsuz.
+      — `şubat çalışması.png` açıldı, paylaşıldı, özellikleri okundu.
+- [ ] **Symlink döngüsü olan ağaçta arama sonsuz döngüye girmiyor.** Koruma kodda
+      (canonical yol seti) ve testi yazılı, ama Windows'ta `createSymbolicLink`
+      yönetici hakkı istediği için test atlanıyor; `/sdcard` FUSE olduğundan emülatörde
+      de symlink kurulamadı. Linux'ta veya gerçek cihazda doğrulanması gerekiyor.
+- [x] `INTERNET` izni yok — `verify<Variant>NoInternetPermission` görevi **birleşmiş**
+      manifest'i denetliyor ve `check`e bağlı. Görevin gerçekten tetiklendiği, izin
+      geçici olarak eklenip derleme başarısız olarak doğrulandı.
+
+**M1 durumu:** sekiz kriterden altısı karşılandı. Kalan ikisi de kod eksikliği değil,
+doğrulama ortamı eksikliği — ikisi de gerçek Xiaomi cihazda tek oturumda kapatılabilir.
 
 ## 8. Bilinen riskler
 

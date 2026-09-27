@@ -24,4 +24,6 @@ object Routes {
     const val CATEGORY = "category/{$ARG_CATEGORY}"
 
     fun category(name: String): String = "category/$name"
+
+    const val ABOUT = "about"
 }

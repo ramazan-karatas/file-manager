@@ -126,4 +126,15 @@
     <string name="category_apk">APK</string>
     <string name="category_archives">Arşivler</string>
     <string name="category_empty">Bu kategoride dosya yok</string>
+    <string name="about_title">Hakkında</string>
+    <string name="about_version">Sürüm %1$s</string>
+    <string name="about_no_internet">İnternet izni yok: dosyaların cihazdan hiçbir yere gönderilemez.</string>
+    <string name="about_no_ads">Reklam, analitik ve telemetri içermez.</string>
+    <string name="about_permissions_title">İstenen izinler</string>
+    <string name="about_permissions_subtitle">Uygulamanın istediği izinlerin tamamı bunlar.</string>
+    <string name="about_permission_storage">Tüm dosyalara erişim — dosyaları listelemek, kopyalamak, taşımak ve silmek için</string>
+    <string name="about_permission_media">Medya okuma — sınırlı modda görsel, video ve ses dosyalarını gösterebilmek için</string>
+    <string name="about_permission_service">Ön plan servisi — kopyalama arka planda kesilmesin diye</string>
+    <string name="about_permission_notifications">Bildirim — süren dosya işleminin ilerlemesini göstermek için</string>
+    <string name="about_permissions_note">Bu liste uygulamanın manifest dosyasıyla birebir aynıdır; derleme sırasında INTERNET izninin bulunmadığı otomatik olarak doğrulanır.</string>
 </resources>

@@ -15,6 +15,7 @@ import androidx.compose.material.icons.outlined.Archive
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.outlined.SdCard
 import androidx.compose.material.icons.outlined.Smartphone
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -59,6 +61,7 @@ import dev.rk.systemapps.files.ui.component.AccessWarningBanner
 fun HomeRoute(
     onOpenFolder: (String) -> Unit,
     onOpenCategory: (FileCategory) -> Unit,
+    onOpenAbout: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -75,6 +78,7 @@ fun HomeRoute(
         onOpenFolder = onOpenFolder,
         onOpenCategory = onOpenCategory,
         onOpenFile = { node -> FileActions.open(context, node) },
+        onOpenAbout = onOpenAbout,
     )
 }
 
@@ -86,11 +90,24 @@ fun HomeScreen(
     onOpenFolder: (String) -> Unit,
     onOpenCategory: (FileCategory) -> Unit,
     onOpenFile: (FileNode) -> Unit,
+    onOpenAbout: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
         modifier = modifier,
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.home_title)) }) },
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.home_title)) },
+                actions = {
+                    IconButton(onClick = onOpenAbout) {
+                        Icon(
+                            imageVector = Icons.Outlined.Info,
+                            contentDescription = stringResource(R.string.about_title),
+                        )
+                    }
+                },
+            )
+        },
     ) { innerPadding ->
         LazyColumn(modifier = Modifier.padding(innerPadding)) {
             if (uiState.showLimitedAccessBanner) {
@@ -296,6 +313,7 @@ private fun HomeScreenPreview() {
             onOpenFolder = {},
             onOpenCategory = {},
             onOpenFile = {},
+            onOpenAbout = {},
         )
     }
 }

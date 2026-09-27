@@ -1,5 +1,6 @@
 package dev.rk.systemapps.files.ui.browser
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -105,6 +106,12 @@ fun FileThumbnail(
         fallback = iconPainter,
         modifier = modifier
             .size(size)
-            .clip(RoundedCornerShape(cornerRadius)),
+            .clip(RoundedCornerShape(cornerRadius))
+            // Beyaz/açık renkli görseller açık zeminde kaybolmasın diye ince çerçeve.
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant,
+                shape = RoundedCornerShape(cornerRadius),
+            ),
     )
 }

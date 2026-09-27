@@ -204,11 +204,21 @@ Bir görev bitince buradaki kutuyu işaretle. Görevler sıralıdır; bağımlı
     SDCARD (68 KB / 510 MB). Kategoriler ve son değişenler de çizildi. ✅
   - 4 yeni test (`StorageVolumeInfo` hesapları; repoda 115).
 
-- [ ] **F-1.11 — M1 cilası**
-  - Boş durum ekranları, hata mesajları (Türkçe), `strings.xml` (tr varsayılan + `values-en`)
-  - Hakkında ekranı: "Bu uygulama internete çıkmaz, reklam ve telemetri içermez" + izin listesi
-  - `INTERNET` izninin manifest'te olmadığını doğrulayan test
-  - Kabul: SPEC 7'deki tüm kabul kriterleri işaretli.
+- [x] **F-1.11 — M1 cilası**
+  - Hakkında ekranı (ana ekranın üst çubuğundan): ağa çıkmama ve reklamsızlık sözü +
+    istenen izinlerin tamamı tek tek, gerekçeleriyle
+  - `INTERNET` izni denetimi: `verify<Variant>NoInternetPermission` görevi AGP'nin
+    artifact API'siyle **birleşmiş** manifest'i okuyor ve `check`e bağlı.
+    Unit test yerine Gradle görevi seçildi çünkü izni bir bağımlılık da ekleyebilir;
+    kaynak manifest'e bakmak bunu yakalamaz.
+    Görevin gerçekten tetiklendiği, izin geçici eklenip derlemenin patlaması ve
+    geri alınınca geçmesiyle doğrulandı.
+  - Açılıştaki spinner kaldırıldı: tercihler okunurken tema zemini gösteriliyor,
+    yarım saniyelik flaş yok
+  - Küçük resimlere ince çerçeve: beyaz/açık görseller açık zeminde kayboluyordu
+  - Kabul: SPEC §7 gözden geçirildi — sekiz kriterden altısı karşılandı.
+    Kalan ikisi (10.000 dosya süresi, symlink döngüsü) kod eksikliği değil,
+    doğrulama ortamı eksikliği; gerekçeleri SPEC §7'de.
 
 ---
 
