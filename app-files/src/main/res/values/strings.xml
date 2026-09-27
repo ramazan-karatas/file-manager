@@ -43,4 +43,40 @@
     <string name="sort_descending">Azalan sırala</string>
     <string name="sort_folders_first">Klasörler üstte</string>
     <string name="sort_show_hidden">Gizli dosyaları göster</string>
+
+    <!-- Dosya işlemleri -->
+    <string name="action_copy">Kopyala</string>
+    <string name="action_cut">Kes</string>
+    <string name="action_delete">Sil</string>
+    <string name="action_paste">Yapıştır</string>
+    <string name="action_cancel">İptal</string>
+    <string name="action_overwrite">Üzerine yaz</string>
+    <string name="action_skip">Atla</string>
+    <string name="action_keep_both">Her ikisini tut</string>
+    <string name="notification_channel_operations">Dosya işlemleri</string>
+    <string name="operation_preparing">Hazırlanıyor…</string>
+    <string name="operation_running">Dosya işlemi sürüyor</string>
+    <string name="operation_counter">%1$d / %2$d · %3$s / %4$s</string>
+    <string name="conflict_title">Aynı adlı öğe var</string>
+    <string name="conflict_message">“%1$s” hedefte zaten var. Ne yapılsın?</string>
+    <string name="conflict_apply_to_all">Kalan çakışmalara da uygula</string>
+    <string name="delete_confirm_message">Bu işlem geri alınamaz.</string>
+    <string name="operation_done">İşlem tamamlandı</string>
+    <string name="operation_cancelled">İşlem iptal edildi</string>
+
+    <plurals name="clipboard_copy_pending">
+        <item quantity="other">%1$d öğe kopyalanacak</item>
+    </plurals>
+
+    <plurals name="clipboard_move_pending">
+        <item quantity="other">%1$d öğe taşınacak</item>
+    </plurals>
+
+    <plurals name="delete_confirm_title">
+        <item quantity="other">%1$d öğe silinsin mi?</item>
+    </plurals>
+
+    <plurals name="operation_done_with_failures">
+        <item quantity="other">İşlem bitti, %1$d öğe atlandı</item>
+    </plurals>
 </resources>

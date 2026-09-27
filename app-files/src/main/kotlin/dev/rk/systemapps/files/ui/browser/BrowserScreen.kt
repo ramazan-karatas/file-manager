@@ -1,6 +1,11 @@
 package dev.rk.systemapps.files.ui.browser
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -23,6 +28,9 @@ import androidx.compose.material.icons.automirrored.outlined.Sort
 import androidx.compose.material.icons.automirrored.outlined.ViewList
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.ContentCut
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Deselect
 import androidx.compose.material.icons.outlined.FolderOff
 import androidx.compose.material.icons.outlined.GridView
@@ -35,25 +43,34 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.rk.systemapps.core.common.format.formatBytes
 import dev.rk.systemapps.core.common.format.formatDate
 import dev.rk.systemapps.core.design.component.AppListItem
+import dev.rk.systemapps.core.design.component.ConfirmDialog
 import dev.rk.systemapps.core.design.component.EmptyState
 import dev.rk.systemapps.core.design.component.LoadingState
 import dev.rk.systemapps.core.design.component.SelectionTopBar
@@ -62,6 +79,7 @@ import dev.rk.systemapps.files.R
 import dev.rk.systemapps.files.domain.model.BrowserPrefs
 import dev.rk.systemapps.files.domain.model.FileNode
 import dev.rk.systemapps.files.domain.model.LocalFileNode
+import dev.rk.systemapps.files.domain.model.OperationState
 import dev.rk.systemapps.files.domain.model.SortBy
 
 @Composable
@@ -73,10 +91,55 @@ fun BrowserRoute(
     viewModel: BrowserViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+
+    val notificationLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { /* Reddedilse de işlem sürer; yalnızca ilerleme bildirimi görünmez. */ }
+    var notificationAsked by rememberSaveable { mutableStateOf(false) }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val doneMessage = stringResource(R.string.operation_done)
+    val cancelledMessage = stringResource(R.string.operation_cancelled)
+    val resources = LocalResources.current
+
+    LaunchedEffect(viewModel) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is BrowserEvent.OperationFinished -> snackbarHostState.showSnackbar(
+                    when {
+                        event.state == OperationState.CANCELLED -> cancelledMessage
+                        event.failureCount > 0 -> resources.getQuantityString(
+                            R.plurals.operation_done_with_failures,
+                            event.failureCount,
+                            event.failureCount,
+                        )
+
+                        else -> doneMessage
+                    },
+                )
+            }
+        }
+    }
 
     BrowserScreen(
         uiState = uiState,
-        onAction = viewModel::onAction,
+        snackbarHostState = snackbarHostState,
+        onAction = { action ->
+            // Bildirim izni, ilk gerçek dosya işleminde isteniyor: bağlamsız sorulmuyor.
+            if (action.startsOperation() && !notificationAsked) {
+                notificationAsked = true
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                    ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.POST_NOTIFICATIONS,
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
+            viewModel.onAction(action)
+        },
         onItemClick = { node ->
             // Dosya açma F-1.8'de gelecek; şimdilik yalnızca klasörler gezilebilir.
             if (node.isDirectory) onNavigateToFolder(node.id)
@@ -91,6 +154,9 @@ fun BrowserRoute(
     )
 }
 
+private fun BrowserAction.startsOperation(): Boolean =
+    this is BrowserAction.Paste || this is BrowserAction.DeleteSelection
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BrowserScreen(
@@ -100,14 +166,44 @@ fun BrowserScreen(
     onNavigateUp: () -> Unit,
     onCrumbClick: (Crumb) -> Unit,
     modifier: Modifier = Modifier,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
     // Seçim modundayken geri tuşu önce seçimi kapatır (docs/files/SPEC.md §3.2).
     BackHandler(enabled = uiState.selectionActive) {
         onAction(BrowserAction.ClearSelection)
     }
 
+    var deleteRequested by remember { mutableStateOf(false) }
+
+    if (deleteRequested) {
+        ConfirmDialog(
+            title = pluralStringResource(
+                R.plurals.delete_confirm_title,
+                uiState.selectedIds.size,
+                uiState.selectedIds.size,
+            ),
+            message = stringResource(R.string.delete_confirm_message),
+            confirmLabel = stringResource(R.string.action_delete),
+            dismissLabel = stringResource(R.string.action_cancel),
+            onConfirm = {
+                deleteRequested = false
+                onAction(BrowserAction.DeleteSelection)
+            },
+            onDismiss = { deleteRequested = false },
+            destructive = true,
+        )
+    }
+
+    uiState.conflict?.let { conflict ->
+        ConflictDialog(
+            conflict = conflict,
+            onDecision = { decision -> onAction(BrowserAction.ResolveConflict(decision)) },
+        )
+    }
+
     Scaffold(
         modifier = modifier,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             if (uiState.selectionActive) {
                 SelectionTopBar(
@@ -129,7 +225,24 @@ fun BrowserScreen(
                                 ),
                             )
                         }
-                        // Kopyala/taşı/sil F-1.6 ve F-1.7'de buraya eklenecek.
+                        IconButton(onClick = { onAction(BrowserAction.CopySelection) }) {
+                            Icon(
+                                imageVector = Icons.Outlined.ContentCopy,
+                                contentDescription = stringResource(R.string.action_copy),
+                            )
+                        }
+                        IconButton(onClick = { onAction(BrowserAction.CutSelection) }) {
+                            Icon(
+                                imageVector = Icons.Outlined.ContentCut,
+                                contentDescription = stringResource(R.string.action_cut),
+                            )
+                        }
+                        IconButton(onClick = { deleteRequested = true }) {
+                            Icon(
+                                imageVector = Icons.Outlined.Delete,
+                                contentDescription = stringResource(R.string.action_delete),
+                            )
+                        }
                     },
                 )
             } else {
@@ -175,33 +288,53 @@ fun BrowserScreen(
         Column(modifier = Modifier.padding(innerPadding)) {
             Breadcrumbs(crumbs = uiState.crumbs, onCrumbClick = onCrumbClick)
 
-            when {
-                uiState.isLoading -> LoadingState()
+            // İçerik kalan alanı kaplar; ilerleme ve yapıştırma çubukları altta sabit kalır.
+            // Aksi hâlde fillMaxSize kullanan boş/yükleniyor durumları çubukları
+            // ekran dışına itiyordu.
+            Box(modifier = Modifier.weight(1f)) {
+                when {
+                    uiState.isLoading -> LoadingState()
 
-                uiState.error != null -> EmptyState(
-                    icon = Icons.Outlined.FolderOff,
-                    title = stringResource(uiState.error.titleRes()),
-                    description = uiState.path,
-                    actionLabel = stringResource(R.string.action_retry),
-                    onAction = { onAction(BrowserAction.Reload) },
+                    uiState.error != null -> EmptyState(
+                        icon = Icons.Outlined.FolderOff,
+                        title = stringResource(uiState.error.titleRes()),
+                        description = uiState.path,
+                        actionLabel = stringResource(R.string.action_retry),
+                        onAction = { onAction(BrowserAction.Reload) },
+                    )
+
+                    uiState.isEmpty -> EmptyState(
+                        icon = Icons.Outlined.FolderOff,
+                        title = stringResource(R.string.browser_empty_title),
+                        description = stringResource(R.string.browser_empty_description),
+                    )
+
+                    uiState.prefs.gridMode -> FileGrid(
+                        uiState = uiState,
+                        onItemClick = onItemClick,
+                        onAction = onAction,
+                    )
+
+                    else -> FileList(
+                        uiState = uiState,
+                        onItemClick = onItemClick,
+                        onAction = onAction,
+                    )
+                }
+            }
+
+            uiState.operation?.let { progress ->
+                OperationProgressBar(
+                    progress = progress,
+                    onCancel = { onAction(BrowserAction.CancelOperation) },
                 )
+            }
 
-                uiState.isEmpty -> EmptyState(
-                    icon = Icons.Outlined.FolderOff,
-                    title = stringResource(R.string.browser_empty_title),
-                    description = stringResource(R.string.browser_empty_description),
-                )
-
-                uiState.prefs.gridMode -> FileGrid(
-                    uiState = uiState,
-                    onItemClick = onItemClick,
-                    onAction = onAction,
-                )
-
-                else -> FileList(
-                    uiState = uiState,
-                    onItemClick = onItemClick,
-                    onAction = onAction,
+            uiState.clipboard?.takeIf { !it.isEmpty }?.let { clipboard ->
+                PasteBar(
+                    clipboard = clipboard,
+                    onPaste = { onAction(BrowserAction.Paste) },
+                    onCancel = { onAction(BrowserAction.ClearClipboard) },
                 )
             }
         }
@@ -272,8 +405,9 @@ private fun FileList(
     uiState: BrowserUiState,
     onItemClick: (FileNode) -> Unit,
     onAction: (BrowserAction) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
+    LazyColumn(modifier = modifier.fillMaxSize()) {
         // key: yeniden sıralamada ve yenilemede satırların kimliğini korur.
         items(items = uiState.items, key = { it.id }) { node ->
             AppListItem(
@@ -301,10 +435,11 @@ private fun FileGrid(
     uiState: BrowserUiState,
     onItemClick: (FileNode) -> Unit,
     onAction: (BrowserAction) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 96.dp),
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(8.dp),
     ) {
         items(items = uiState.items, key = { it.id }) { node ->

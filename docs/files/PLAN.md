@@ -122,11 +122,29 @@ Bir görev bitince buradaki kutuyu işaretle. Görevler sıralıdır; bağımlı
   - **Henüz UI'ya bağlı değil**; seçim çubuğu ikonları ve yapıştırma çubuğu F-1.7'de.
   - Bağımlılık: F-1.2
 
-- [ ] **F-1.7 — `FileOperationService` (foreground)**
-  - Kuyruk, bildirim (ilerleme + iptal aksiyonu), `POST_NOTIFICATIONS` izni
-  - `foregroundServiceType="dataSync"`, `MediaScannerConnection` tetikleme
-  - UI: alt yapıştırma çubuğu + `ProgressSheet` + çakışma diyaloğu
-  - Kabul: uygulama arka plandayken 2 GB kopyalama tamamlanıyor; bildirimden iptal çalışıyor.
+- [x] **F-1.7 — `FileOperationService` (foreground)**
+  - `FileOperationManager`: kuyruk, ilerleme durumu, çakışma yönlendirmesi, iptal.
+    **Servis işi yapmaz**, yalnızca süreci ayakta tutar ve bildirimi günceller; UI
+    doğrudan yöneticiye bağlanır, böylece çakışma diyaloğu Intent trafiği gerektirmez.
+  - `foregroundServiceType="dataSync"`, bildirimde ilerleme + iptal aksiyonu
+  - `POST_NOTIFICATIONS` ilk gerçek dosya işleminde isteniyor (bağlamsız sorulmuyor)
+  - Pano DataStore'da: uygulama yeniden başlasa da yapıştırma çubuğu kalıyor.
+    Taşımada pano tüketilir, kopyalamada korunur (birden çok yere yapıştırılabilsin).
+  - UI: seçim çubuğunda kopyala/kes/sil, alt yapıştırma çubuğu, ilerleme paneli,
+    çakışma diyaloğu, silme onayı, bitişte özet snackbar'ı
+  - `MediaScannerConnection` her işlemden sonra tetikleniyor
+  - Kabul (emülatör, API 37):
+    - 300 MB kopyalama uygulama **arka plandayken** tamamlandı; servis `dataSync`
+      tipiyle ön planda, bildirim ilerlemeyi gösterdi. ✅
+    - İptal: 1,2 GB kopyalama ortasında iptal edildi, hedef klasör boş kaldı
+      (yarım dosya yok), kaynak sağlam. ✅
+    - **Not:** iptal, uygulama içi panelden tetiklendi. Bildirimdeki düğme aynı
+      `cancelCurrent()` yoluna gider ve aksiyonun kayıtlı olduğu `dumpsys` ile
+      doğrulandı, ancak düğmeye basarak ayrıca sınanmadı.
+  - **Yol boyunca bulunan iki hata:** (1) boş klasörde `EmptyState` tüm alanı kaplayıp
+    alt çubukları ekran dışına itiyordu; (2) servis durduğunda bildirim ekranda kalıyordu
+    (NotificationManager üzerinden güncellendiği için otomatik kalkmıyor). İkisi de düzeltildi.
+  - 7 yeni `FileOperationManager` testi.
   - Bağımlılık: F-1.6
 
 - [ ] **F-1.8 — Tekil dosya işlemleri**

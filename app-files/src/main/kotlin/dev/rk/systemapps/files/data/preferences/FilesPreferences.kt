@@ -14,6 +14,8 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import dev.rk.systemapps.files.domain.model.BrowserPrefs
+import dev.rk.systemapps.files.domain.model.ClipboardMode
+import dev.rk.systemapps.files.domain.model.FileClipboard
 import dev.rk.systemapps.files.domain.model.SortBy
 import java.io.IOException
 import javax.inject.Singleton
@@ -40,9 +42,14 @@ interface FilesPreferences {
 
     val browserPrefs: Flow<BrowserPrefs>
 
+    /** Yapıştırılmayı bekleyen öğeler; boşsa null. */
+    val clipboard: Flow<FileClipboard?>
+
     suspend fun setLimitedModeAccepted(accepted: Boolean)
 
     suspend fun setBrowserPrefs(prefs: BrowserPrefs)
+
+    suspend fun setClipboard(clipboard: FileClipboard?)
 }
 
 class DataStoreFilesPreferences(
@@ -72,6 +79,31 @@ class DataStoreFilesPreferences(
         }
         .distinctUntilChanged()
 
+    override val clipboard: Flow<FileClipboard?> = preferences
+        .map { stored ->
+            // Yollar satır sonuyla birleştiriliyor: sıra korunur ve dosya adlarında
+            // satır sonu karakteri bulunamaz.
+            val paths = stored[Keys.CLIPBOARD_PATHS]
+                ?.split('\n')
+                ?.filter { it.isNotEmpty() }
+                .orEmpty()
+            val mode = stored[Keys.CLIPBOARD_MODE]?.toClipboardMode()
+            if (paths.isEmpty() || mode == null) null else FileClipboard(paths, mode)
+        }
+        .distinctUntilChanged()
+
+    override suspend fun setClipboard(clipboard: FileClipboard?) {
+        dataStore.edit { stored ->
+            if (clipboard == null || clipboard.isEmpty) {
+                stored.remove(Keys.CLIPBOARD_PATHS)
+                stored.remove(Keys.CLIPBOARD_MODE)
+            } else {
+                stored[Keys.CLIPBOARD_PATHS] = clipboard.paths.joinToString("\n")
+                stored[Keys.CLIPBOARD_MODE] = clipboard.mode.name
+            }
+        }
+    }
+
     override suspend fun setLimitedModeAccepted(accepted: Boolean) {
         dataStore.edit { it[Keys.LIMITED_MODE_ACCEPTED] = accepted }
     }
@@ -89,6 +121,9 @@ class DataStoreFilesPreferences(
     /** Kaydedilmiş değer geçersizse (sürüm değişikliği, elle düzenleme) varsayılana düşülür. */
     private fun String.toSortBy(): SortBy? = SortBy.entries.firstOrNull { it.name == this }
 
+    private fun String.toClipboardMode(): ClipboardMode? =
+        ClipboardMode.entries.firstOrNull { it.name == this }
+
     private object Keys {
         val LIMITED_MODE_ACCEPTED = booleanPreferencesKey("limited_mode_accepted")
         val SORT_BY = stringPreferencesKey("browser_sort_by")
@@ -96,6 +131,8 @@ class DataStoreFilesPreferences(
         val GRID_MODE = booleanPreferencesKey("browser_grid_mode")
         val SHOW_HIDDEN = booleanPreferencesKey("browser_show_hidden")
         val FOLDERS_FIRST = booleanPreferencesKey("browser_folders_first")
+        val CLIPBOARD_PATHS = stringPreferencesKey("clipboard_paths")
+        val CLIPBOARD_MODE = stringPreferencesKey("clipboard_mode")
     }
 }
 

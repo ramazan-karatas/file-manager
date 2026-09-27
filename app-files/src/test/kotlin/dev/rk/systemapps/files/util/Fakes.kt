@@ -3,6 +3,7 @@ package dev.rk.systemapps.files.util
 import dev.rk.systemapps.core.common.result.Outcome
 import dev.rk.systemapps.files.data.preferences.FilesPreferences
 import dev.rk.systemapps.files.domain.model.BrowserPrefs
+import dev.rk.systemapps.files.domain.model.FileClipboard
 import dev.rk.systemapps.files.domain.model.FileNode
 import dev.rk.systemapps.files.domain.model.ListingOptions
 import dev.rk.systemapps.files.domain.repository.FileRepository
@@ -37,11 +38,18 @@ class FakeFilesPreferences(
 
     private val prefs = MutableStateFlow(initialPrefs)
     private val limitedAccepted = MutableStateFlow(initialLimitedAccepted)
+    private val clipboardState = MutableStateFlow<FileClipboard?>(null)
 
     override val limitedModeAccepted: Flow<Boolean> = limitedAccepted
     override val browserPrefs: Flow<BrowserPrefs> = prefs
+    override val clipboard: Flow<FileClipboard?> = clipboardState
 
     val currentPrefs: BrowserPrefs get() = prefs.value
+    val currentClipboard: FileClipboard? get() = clipboardState.value
+
+    override suspend fun setClipboard(clipboard: FileClipboard?) {
+        clipboardState.value = clipboard
+    }
 
     override suspend fun setLimitedModeAccepted(accepted: Boolean) {
         limitedAccepted.value = accepted

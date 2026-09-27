@@ -43,4 +43,44 @@
     <string name="sort_descending">Sort descending</string>
     <string name="sort_folders_first">Folders first</string>
     <string name="sort_show_hidden">Show hidden files</string>
+
+    <!-- File operations -->
+    <string name="action_copy">Copy</string>
+    <string name="action_cut">Cut</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_paste">Paste</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_overwrite">Overwrite</string>
+    <string name="action_skip">Skip</string>
+    <string name="action_keep_both">Keep both</string>
+    <string name="notification_channel_operations">File operations</string>
+    <string name="operation_preparing">Preparing…</string>
+    <string name="operation_running">File operation in progress</string>
+    <string name="operation_counter">%1$d / %2$d · %3$s / %4$s</string>
+    <string name="conflict_title">Item already exists</string>
+    <string name="conflict_message">“%1$s” already exists in the target. What should happen?</string>
+    <string name="conflict_apply_to_all">Apply to remaining conflicts</string>
+    <string name="delete_confirm_message">This cannot be undone.</string>
+    <string name="operation_done">Operation complete</string>
+    <string name="operation_cancelled">Operation cancelled</string>
+
+    <plurals name="clipboard_copy_pending">
+        <item quantity="one">%1$d item to copy</item>
+        <item quantity="other">%1$d items to copy</item>
+    </plurals>
+
+    <plurals name="clipboard_move_pending">
+        <item quantity="one">%1$d item to move</item>
+        <item quantity="other">%1$d items to move</item>
+    </plurals>
+
+    <plurals name="delete_confirm_title">
+        <item quantity="one">Delete %1$d item?</item>
+        <item quantity="other">Delete %1$d items?</item>
+    </plurals>
+
+    <plurals name="operation_done_with_failures">
+        <item quantity="one">Finished, %1$d item skipped</item>
+        <item quantity="other">Finished, %1$d items skipped</item>
+    </plurals>
 </resources>

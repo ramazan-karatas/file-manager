@@ -6,9 +6,13 @@ import dev.rk.systemapps.core.common.result.Outcome
 import dev.rk.systemapps.files.domain.model.BrowserPrefs
 import dev.rk.systemapps.files.domain.model.SortBy
 import dev.rk.systemapps.files.ui.Routes
+import dev.rk.systemapps.files.data.operation.FileOperationEngine
+import dev.rk.systemapps.files.data.operation.FileOperationManager
+import dev.rk.systemapps.files.data.operation.OperationServiceController
 import dev.rk.systemapps.files.util.FakeFileRepository
 import dev.rk.systemapps.files.util.FakeFilesPreferences
 import dev.rk.systemapps.files.util.MainDispatcherRule
+import dev.rk.systemapps.files.util.TestDispatcherProvider
 import dev.rk.systemapps.files.util.fileNode
 import dev.rk.systemapps.files.util.names
 import java.io.FileNotFoundException
@@ -32,13 +36,25 @@ class BrowserViewModelTest {
         fileNode("c.txt", parent = directory),
     )
 
+    private fun operationManager() = FileOperationManager(
+        serviceController = object : OperationServiceController {
+            override fun start() = Unit
+            override fun stop() = Unit
+        },
+        engine = FileOperationEngine(progressIntervalMs = 0L),
+        mediaScanner = { },
+        dispatchers = TestDispatcherProvider(),
+    )
+
     private fun viewModel(
         repository: FakeFileRepository = FakeFileRepository(nodes),
         preferences: FakeFilesPreferences = FakeFilesPreferences(),
+        operations: FileOperationManager = operationManager(),
         savedStateHandle: SavedStateHandle = SavedStateHandle(mapOf(Routes.ARG_PATH to directory)),
     ) = BrowserViewModel(
         repository = repository,
         preferences = preferences,
+        operations = operations,
         storageLocations = { "/storage/emulated/0" },
         savedStateHandle = savedStateHandle,
     )
