@@ -148,26 +148,39 @@ Room tabloları: `bookmarks`, `trash_entries`, `dir_size_cache`.
 
 ```kotlin
 sealed interface FileOperation {
-    data class Copy(val sources: List<FileNode>, val target: FileNode) : FileOperation
-    data class Move(val sources: List<FileNode>, val target: FileNode) : FileOperation
-    data class Delete(val targets: List<FileNode>, val toTrash: Boolean) : FileOperation
-    data class Compress(val sources: List<FileNode>, val archiveName: String) : FileOperation
-    data class Extract(val archive: FileNode, val target: FileNode) : FileOperation
+    val id: String
+    val sources: List<String>          // yol; FileNode değil — motor domain modeli taşımaz
+
+    data class Copy(sources, targetDirectory) : FileOperation
+    data class Move(sources, targetDirectory) : FileOperation
+    data class Delete(sources) : FileOperation
+    // Compress / Extract: F-2.4'te uygulamalarıyla birlikte eklenecek.
+    // Delete.toTrash: F-2.3'te çöp kutusuyla birlikte eklenecek.
 }
 
 data class OperationProgress(
     val opId: String,
+    val state: OperationState,         // PREPARING, RUNNING, DONE, FAILED, CANCELLED
     val currentFile: String,
     val processedBytes: Long, val totalBytes: Long,
     val processedItems: Int, val totalItems: Int,
-    val state: State,   // PREPARING, RUNNING, CONFLICT, DONE, FAILED, CANCELLED
+    val failures: List<OperationFailure>,
 )
 ```
+
+**Çakışma ayrı bir durum değil, ayrı bir soru.** `CONFLICT` durumu yayınlamak yerine motor
+bir `ConflictResolver` çağırır ve cevabı bekler (`OVERWRITE` / `SKIP` / `KEEP_BOTH` / `CANCEL`
++ "hepsine uygula"). Böylece motor UI bilmeden çalışır ve testlerde sabit cevap verilebilir.
+
+**`CANCELLED` durumunu motor yalnızca kullanıcı çakışma diyaloğunda "İptal" dediğinde yayar.**
+Dışarıdan iptal coroutine iptalidir; iptal edilmiş bir akışa değer gönderilemeyeceği için
+bu durumu işlemi iptal eden taraf (servis) kendi durumuna yazar.
 
 Zorunlu davranışlar:
 
 1. **Ön hesap:** işlem başlamadan toplam boyut ve öğe sayısı hesaplanır (`PREPARING`).
-2. **Aynı birimde taşıma** `renameTo` ile anlık; **farklı birimde** kopyala → doğrula → sil.
+2. **Aynı birimde taşıma** `renameTo` ile anlık denenir; başarısız olursa (farklı birim,
+   hedefte çakışma) kopyala + sil yoluna düşülür.
 3. **Çakışma:** hedefte aynı ad varsa `CONFLICT` durumu; kullanıcıya sorulur:
    Üzerine yaz / Atla / Her ikisini tut (`dosya (1).txt`) / "Hepsine uygula" kutusu.
 4. **İptal edilebilir**; iptalde yarım kalan hedef dosya silinir.

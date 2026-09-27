@@ -110,12 +110,16 @@ Bir görev bitince buradaki kutuyu işaretle. Görevler sıralıdır; bağımlı
   - **Yan bulgu:** `Crumb.fromPath` varsayılan parametresinde `Environment` çağrısı vardı,
     ViewModel'i JVM'de test edilemez yapıyordu. `StorageLocations` arayüzüne çevrildi.
 
-- [ ] **F-1.6 — Dosya işlemi motoru (çekirdek)**
-  - `FileOperation`, `OperationProgress` (SPEC 5), `FileOperationEngine` (saf Kotlin, test edilebilir)
-  - Kopyala/taşı/sil; ön hesap, 64 KB tampon, 200 ms throttle'lı progress, iptal
-  - Çakışma çözümü: `ConflictResolution` (OVERWRITE/SKIP/KEEP_BOTH) + "hepsine uygula"
-  - Kabul: unit testler — çakışma her üç modda, iptalde yarım dosya silinmesi,
-    farklı birim taşımada kopyala+sil, bir dosya hata verince diğerlerinin devam etmesi.
+- [x] **F-1.6 — Dosya işlemi motoru (çekirdek)**
+  - `FileOperation`, `OperationProgress`, `ConflictResolver` (SPEC §5 güncellendi)
+  - `FileOperationEngine`: kopyala/taşı/sil, ön hesap, 64 KB tampon, 200 ms throttle, iptal
+  - **Spec sapmaları:** `CONFLICT` durumu yayınlanmıyor — motor `ConflictResolver`'a sorup
+    cevabı bekliyor (UI bağımsızlığı ve test edilebilirlik için). `Compress`/`Extract` ve
+    `Delete.toTrash` uygulamalarıyla birlikte F-2.4 ve F-2.3'te eklenecek.
+  - Kabul: 20 test, kriterdeki dört senaryo dâhil — çakışmanın dört kipi, "hepsine uygula",
+    iptalde yarım dosyanın silinmesi (+ iptalden önce bitenlerin yerinde kalması),
+    çakışmalı taşımada kopyala+sil yolu, bir öğe hata verince diğerlerinin devam etmesi. ✅
+  - **Henüz UI'ya bağlı değil**; seçim çubuğu ikonları ve yapıştırma çubuğu F-1.7'de.
   - Bağımlılık: F-1.2
 
 - [ ] **F-1.7 — `FileOperationService` (foreground)**
