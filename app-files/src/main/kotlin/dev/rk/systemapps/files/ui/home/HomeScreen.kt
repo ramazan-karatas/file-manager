@@ -22,7 +22,6 @@ import dev.rk.systemapps.core.design.component.ItemIcon
 import dev.rk.systemapps.core.design.theme.SystemAppsTheme
 import dev.rk.systemapps.core.storage.permission.StorageAccessLevel
 import dev.rk.systemapps.core.storage.permission.launchManageAllFilesSettings
-import dev.rk.systemapps.core.storage.volume.StoragePaths
 import dev.rk.systemapps.files.R
 import dev.rk.systemapps.files.ui.component.AccessWarningBanner
 
@@ -70,7 +69,7 @@ fun HomeScreen(
                 title = stringResource(R.string.storage_internal),
                 subtitle = stringResource(R.string.storage_internal_subtitle),
                 leading = { ItemIcon(Icons.Outlined.Smartphone) },
-                onClick = { onOpenFolder(StoragePaths.primaryExternalStorage()) },
+                onClick = { onOpenFolder(uiState.storageRoot) },
             )
         }
     }

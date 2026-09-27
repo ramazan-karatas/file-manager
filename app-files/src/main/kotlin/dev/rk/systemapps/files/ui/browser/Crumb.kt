@@ -1,7 +1,5 @@
 package dev.rk.systemapps.files.ui.browser
 
-import dev.rk.systemapps.core.storage.volume.StoragePaths
-
 /**
  * Breadcrumb'taki tek parça. [path] o parçaya kadar olan tam yoldur.
  */
@@ -13,10 +11,7 @@ data class Crumb(
 ) {
     companion object {
 
-        fun fromPath(
-            path: String,
-            storageRoot: String = StoragePaths.primaryExternalStorage(),
-        ): List<Crumb> {
+        fun fromPath(path: String, storageRoot: String): List<Crumb> {
             if (path.isEmpty()) return emptyList()
 
             val crumbs = mutableListOf<Crumb>()

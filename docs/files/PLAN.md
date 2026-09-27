@@ -93,15 +93,22 @@ Bir görev bitince buradaki kutuyu işaretle. Görevler sıralıdır; bağımlı
       ~130.000 pahalı `Collator.compare` çağrısı yerine 10.000 anahtar üretimi).
   - Bağımlılık: F-1.2
 
-- [ ] **F-1.4 — Sıralama, görünüm ve tercihler**
-  - DataStore ile `BrowserPrefs` kalıcılığı; üst çubukta sıralama menüsü
-  - Klasörler üstte, gizli dosyalar toggle'ı
-  - Kabul: uygulama yeniden başlayınca tercihler korunuyor.
+- [x] **F-1.4 — Sıralama, görünüm ve tercihler**
+  - `BrowserPrefs` (sıralama, yön, ızgara, gizli dosyalar, klasörler üstte) DataStore'da
+  - Üst çubukta sıralama menüsü; tercih değişince `collectLatest` ile yeniden listelenir
+  - `FilesPreferences` arayüze çevrildi — ViewModel testlerinde sahte uygulama veriliyor
+  - Kabul: emülatörde "Boyuta göre" seçilip uygulama force-stop edildi, yeniden
+    açıldığında seçim korunuyor. ✅
 
-- [ ] **F-1.5 — Seçim modu**
-  - Uzun basma ile giriş, sayaç, tümünü seç, ters seç, geri tuşu davranışı (SPEC 3.2)
-  - Seçim `SavedStateHandle`'da tutulur (proses ölümüne dayanıklı)
-  - Kabul: döndürmede seçim kayboluyor mu testi (kaybolmamalı).
+- [x] **F-1.5 — Seçim modu**
+  - Uzun basma ile giriş, sayaç, tümünü seç, ters seç; geri tuşu önce seçimi kapatır
+  - Seçim `SavedStateHandle`'da tutulur; listeden kaybolan öğeler seçimden düşer
+  - Liste ve ızgara kiplerinin ikisinde de çalışır
+  - **Not:** kopyala/taşı/sil ikonları seçim çubuğunda henüz yok, F-1.6 ve F-1.7'de gelecek.
+  - Kabul: 10 ViewModel testi; aralarında aynı `SavedStateHandle` ile yeni ViewModel
+    oluşturup seçimin korunduğunu doğrulayan test (proses ölümü / döndürme senaryosu). ✅
+  - **Yan bulgu:** `Crumb.fromPath` varsayılan parametresinde `Environment` çağrısı vardı,
+    ViewModel'i JVM'de test edilemez yapıyordu. `StorageLocations` arayüzüne çevrildi.
 
 - [ ] **F-1.6 — Dosya işlemi motoru (çekirdek)**
   - `FileOperation`, `OperationProgress` (SPEC 5), `FileOperationEngine` (saf Kotlin, test edilebilir)

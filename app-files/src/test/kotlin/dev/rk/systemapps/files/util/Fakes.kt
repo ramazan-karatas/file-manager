@@ -1,0 +1,53 @@
+package dev.rk.systemapps.files.util
+
+import dev.rk.systemapps.core.common.result.Outcome
+import dev.rk.systemapps.files.data.preferences.FilesPreferences
+import dev.rk.systemapps.files.domain.model.BrowserPrefs
+import dev.rk.systemapps.files.domain.model.FileNode
+import dev.rk.systemapps.files.domain.model.ListingOptions
+import dev.rk.systemapps.files.domain.repository.FileRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
+
+class FakeFileRepository(nodes: List<FileNode> = emptyList()) : FileRepository {
+
+    var result: Outcome<List<FileNode>> = Outcome.Success(nodes)
+
+    /** Her `list` çağrısında kullanılan seçenekler — tercih değişimini doğrulamak için. */
+    val requestedOptions = mutableListOf<ListingOptions>()
+
+    override fun list(
+        directoryId: String,
+        options: ListingOptions,
+    ): Flow<Outcome<List<FileNode>>> = flow {
+        requestedOptions += options
+        emit(result)
+    }
+
+    override suspend fun stat(id: String): Outcome<FileNode> = Outcome.Failure()
+
+    override suspend fun exists(id: String): Boolean = false
+}
+
+class FakeFilesPreferences(
+    initialPrefs: BrowserPrefs = BrowserPrefs(),
+    initialLimitedAccepted: Boolean = false,
+) : FilesPreferences {
+
+    private val prefs = MutableStateFlow(initialPrefs)
+    private val limitedAccepted = MutableStateFlow(initialLimitedAccepted)
+
+    override val limitedModeAccepted: Flow<Boolean> = limitedAccepted
+    override val browserPrefs: Flow<BrowserPrefs> = prefs
+
+    val currentPrefs: BrowserPrefs get() = prefs.value
+
+    override suspend fun setLimitedModeAccepted(accepted: Boolean) {
+        limitedAccepted.value = accepted
+    }
+
+    override suspend fun setBrowserPrefs(prefs: BrowserPrefs) {
+        this.prefs.value = prefs
+    }
+}

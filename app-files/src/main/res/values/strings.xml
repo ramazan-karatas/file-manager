@@ -29,4 +29,18 @@
     <string name="browser_error_not_found">Klasör bulunamadı</string>
     <string name="browser_error_not_readable">Klasör okunamadı</string>
     <string name="browser_error_unknown">Klasör açılırken bir sorun oluştu</string>
+
+    <!-- Sıralama ve seçim -->
+    <string name="action_sort">Sırala</string>
+    <string name="action_close_selection">Seçimi kapat</string>
+    <string name="action_select_all">Tümünü seç</string>
+    <string name="action_invert_selection">Seçimi tersine çevir</string>
+    <string name="sort_by_name">Ada göre</string>
+    <string name="sort_by_size">Boyuta göre</string>
+    <string name="sort_by_date">Tarihe göre</string>
+    <string name="sort_by_type">Türe göre</string>
+    <string name="sort_ascending">Artan sırala</string>
+    <string name="sort_descending">Azalan sırala</string>
+    <string name="sort_folders_first">Klasörler üstte</string>
+    <string name="sort_show_hidden">Gizli dosyaları göster</string>
 </resources>

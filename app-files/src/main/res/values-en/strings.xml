@@ -29,4 +29,18 @@
     <string name="browser_error_not_found">Folder not found</string>
     <string name="browser_error_not_readable">Folder could not be read</string>
     <string name="browser_error_unknown">Something went wrong opening this folder</string>
+
+    <!-- Sorting and selection -->
+    <string name="action_sort">Sort</string>
+    <string name="action_close_selection">Close selection</string>
+    <string name="action_select_all">Select all</string>
+    <string name="action_invert_selection">Invert selection</string>
+    <string name="sort_by_name">By name</string>
+    <string name="sort_by_size">By size</string>
+    <string name="sort_by_date">By date</string>
+    <string name="sort_by_type">By type</string>
+    <string name="sort_ascending">Sort ascending</string>
+    <string name="sort_descending">Sort descending</string>
+    <string name="sort_folders_first">Folders first</string>
+    <string name="sort_show_hidden">Show hidden files</string>
 </resources>
