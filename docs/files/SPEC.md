@@ -88,19 +88,20 @@ değiştirilme tarihi, izinler (rwx); görsel/video ise çözünürlük ve süre
 ```kotlin
 // domain/model/FileNode.kt
 sealed interface FileNode {
+    val id: String          // yerel dosyada tam yol, SAF'ta document URI metni
     val name: String
-    val uri: Uri            // file:// veya content://
     val isDirectory: Boolean
-    val size: Long          // klasörse -1 (henüz hesaplanmadı)
+    val size: Long          // klasörse SIZE_UNKNOWN (-1)
     val lastModified: Long
     val mimeType: String?
-    val isHidden: Boolean
+    val isHidden: Boolean   // ölçüt: adın nokta ile başlaması
+    val extension: String   // türetilmiş: noktasız, küçük harfli
 }
 
-data class LocalFileNode(val path: String, ...) : FileNode    // MANAGE_EXTERNAL_STORAGE yolu
-data class DocumentNode(val docUri: Uri, ...) : FileNode      // SAF yolu (SD kart, /Android/data)
+data class LocalFileNode(...) : FileNode     // doğrudan dosya sistemi (MANAGE_EXTERNAL_STORAGE)
+data class DocumentNode(...) : FileNode      // SAF (SD kart, /Android/data) — F-2.7'de kullanılacak
 
-data class StorageVolumeInfo(
+data class StorageVolumeInfo(               // :core:storage
     val id: String, val label: String, val path: String,
     val totalBytes: Long, val freeBytes: Long,
     val isRemovable: Boolean, val isPrimary: Boolean,
@@ -108,14 +109,34 @@ data class StorageVolumeInfo(
 
 enum class SortBy { NAME, SIZE, DATE, TYPE }
 
-data class BrowserPrefs(
-    val sortBy: SortBy, val ascending: Boolean, val gridMode: Boolean,
-    val showHidden: Boolean, val foldersFirst: Boolean,
+// Repository'nin listeleme davranışı. Yalnızca görünümü ilgilendiren gridMode burada değil,
+// F-1.4'te UI tercihleri tipinde tutulacak.
+data class ListingOptions(
+    val sortBy: SortBy = SortBy.NAME,
+    val ascending: Boolean = true,
+    val showHidden: Boolean = false,
+    val foldersFirst: Boolean = true,
 )
 ```
 
 **Kritik soyutlama:** UI katmanı `java.io.File` bilmez, yalnızca `FileNode` bilir.
 Böylece SD kart (SAF) ve dahili depolama (doğrudan File) aynı ekranlarla çalışır.
+
+**Kimlik neden `Uri` değil `String`:** `android.net.Uri` domain'e girerse sıralama ve
+filtreleme mantığı JVM testlerinde çalışmaz (Robolectric gerekir). Kimlik metin olarak
+taşınıyor, `Uri`ye dönüşüm paylaşma/açma gibi framework'e değen yerlerde yapılıyor.
+
+**Repository sözleşmesi** (`domain/repository/FileRepository.kt`):
+
+```kotlin
+fun list(directoryId: String, options: ListingOptions): Flow<Outcome<List<FileNode>>>
+suspend fun stat(id: String): Outcome<FileNode>
+suspend fun exists(id: String): Boolean
+```
+
+`list` akış döner ki ileride klasör izleme (FileObserver) eklendiğinde arayüz değişmesin;
+şu an tek değer yayıp tamamlanır. Sıralamada yerel duyarlı `Collator` kullanılır — Türkçe'de
+`ş`, `ı`, `ç` ASCII karşılaştırmasıyla yanlış yere düşer.
 
 Room tabloları: `bookmarks`, `trash_entries`, `dir_size_cache`.
 

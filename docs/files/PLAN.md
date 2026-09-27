@@ -56,11 +56,18 @@ Bir görev bitince buradaki kutuyu işaretle. Görevler sıralıdır; bağımlı
   - **Bilinen kozmetik sorun:** açılışta tercihler okunurken kısa bir spinner görünüyor;
     F-1.11'de splash screen API'siyle giderilecek.
 
-- [ ] **F-1.2 — `FileNode` soyutlaması ve yerel veri kaynağı**
-  - `domain/model/FileNode.kt` (SPEC 4), `LocalFileNode`, `DocumentNode`
-  - `FileRepository` arayüzü: `list(dir): Flow<Outcome<List<FileNode>>>`, `stat`, `exists`
-  - `LocalFileDataSource` — `java.io.File` tabanlı, IO dispatcher'da
-  - Kabul: repository unit testleri (geçici dizin üzerinde), gizli dosya filtresi, sıralama.
+- [x] **F-1.2 — `FileNode` soyutlaması ve yerel veri kaynağı**
+  - `FileNode` (sealed) + `LocalFileNode` + `DocumentNode`, `SortBy`, `ListingOptions`
+  - `FileRepository` arayüzü + `FileRepositoryImpl` (IO dispatcher, `Outcome`)
+  - `LocalFileDataSource` — `java.io.File` tabanlı, hatayı exception olarak yükseltir
+  - `FileNodeSorter` — süzme + sıralama, yerel duyarlı `Collator` ile
+  - `MimeTypeResolver` arayüzü + `AndroidMimeTypeResolver` (MimeTypeMap + yedek tablo)
+  - **Spec değişikliği:** kimlik `Uri` yerine `String`; gerekçe SPEC §4'te.
+  - **Not:** `DocumentNode` F-2.7'ye kadar kullanılmıyor; sealed hiyerarşide
+    "tek UI - iki depolama arka ucu" kuralını görünür kılmak için şimdiden tanımlı.
+  - Kabul: 28 unit test — geçici dizin üzerinde listeleme, gizli dosya süzgeci,
+    dört sıralama kipi, Türkçe harf sırası, hata durumlarının `Outcome.Failure`'a
+    dönüşmesi (exception sızmıyor).
   - Bağımlılık: F-0.2
 
 - [ ] **F-1.3 — Gezgin ekranı: listeleme**
