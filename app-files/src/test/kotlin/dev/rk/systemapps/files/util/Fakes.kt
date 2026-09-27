@@ -3,6 +3,8 @@ package dev.rk.systemapps.files.util
 import dev.rk.systemapps.core.common.result.Outcome
 import dev.rk.systemapps.files.data.preferences.FilesPreferences
 import dev.rk.systemapps.files.domain.model.BrowserPrefs
+import dev.rk.systemapps.files.domain.model.DirectoryStats
+import dev.rk.systemapps.files.domain.model.FileDetails
 import dev.rk.systemapps.files.domain.model.FileClipboard
 import dev.rk.systemapps.files.domain.model.FileNode
 import dev.rk.systemapps.files.domain.model.ListingOptions
@@ -29,6 +31,32 @@ class FakeFileRepository(nodes: List<FileNode> = emptyList()) : FileRepository {
     override suspend fun stat(id: String): Outcome<FileNode> = Outcome.Failure()
 
     override suspend fun exists(id: String): Boolean = false
+
+    var detailsResult: Outcome<FileDetails> = Outcome.Failure()
+    var statsResult: Outcome<DirectoryStats> = Outcome.Failure()
+    var nameResult: Outcome<FileNode> = Outcome.Failure()
+
+    /** Son çağrılan ad işlemi: ("rename"/"mkdir"/"touch", hedef, ad). */
+    val nameCalls = mutableListOf<Triple<String, String, String>>()
+
+    override suspend fun details(id: String): Outcome<FileDetails> = detailsResult
+
+    override suspend fun directoryStats(id: String): Outcome<DirectoryStats> = statsResult
+
+    override suspend fun rename(id: String, newName: String): Outcome<FileNode> {
+        nameCalls += Triple("rename", id, newName)
+        return nameResult
+    }
+
+    override suspend fun createDirectory(parentId: String, name: String): Outcome<FileNode> {
+        nameCalls += Triple("mkdir", parentId, name)
+        return nameResult
+    }
+
+    override suspend fun createFile(parentId: String, name: String): Outcome<FileNode> {
+        nameCalls += Triple("touch", parentId, name)
+        return nameResult
+    }
 }
 
 class FakeFilesPreferences(

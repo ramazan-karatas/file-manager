@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!--
+      Dosya yöneticisi tüm dış depolamaya erişir; paylaşılan içerik de her yerden
+      gelebilir. Kapsam MANAGE_EXTERNAL_STORAGE ile zaten verilmiş durumda.
+    -->
+    <external-path name="external_storage" path="." />
+    <root-path name="root" path="/" />
+</paths>

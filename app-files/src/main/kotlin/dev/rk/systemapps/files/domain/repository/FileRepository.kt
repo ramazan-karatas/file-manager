@@ -1,6 +1,8 @@
 package dev.rk.systemapps.files.domain.repository
 
 import dev.rk.systemapps.core.common.result.Outcome
+import dev.rk.systemapps.files.domain.model.DirectoryStats
+import dev.rk.systemapps.files.domain.model.FileDetails
 import dev.rk.systemapps.files.domain.model.FileNode
 import dev.rk.systemapps.files.domain.model.ListingOptions
 import kotlinx.coroutines.flow.Flow
@@ -21,4 +23,16 @@ interface FileRepository {
     suspend fun stat(id: String): Outcome<FileNode>
 
     suspend fun exists(id: String): Boolean
+
+    /** Özellikler diyaloğu için hızlı okunabilen bilgiler; klasör boyutu dâhil değildir. */
+    suspend fun details(id: String): Outcome<FileDetails>
+
+    /** Klasör ağacını dolaşır; pahalıdır, ayrı çağrılır ki UI bekletmeden spinner gösterebilsin. */
+    suspend fun directoryStats(id: String): Outcome<DirectoryStats>
+
+    suspend fun rename(id: String, newName: String): Outcome<FileNode>
+
+    suspend fun createDirectory(parentId: String, name: String): Outcome<FileNode>
+
+    suspend fun createFile(parentId: String, name: String): Outcome<FileNode>
 }

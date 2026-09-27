@@ -147,11 +147,30 @@ Bir görev bitince buradaki kutuyu işaretle. Görevler sıralıdır; bağımlı
   - 7 yeni `FileOperationManager` testi.
   - Bağımlılık: F-1.6
 
-- [ ] **F-1.8 — Tekil dosya işlemleri**
-  - Yeniden adlandır, yeni klasör, yeni dosya, paylaş (`FileProvider` + `ACTION_SEND`),
-    aç (`ACTION_VIEW`, uygun MIME), özellikler diyaloğu (SPEC 3.6)
-  - `file_paths.xml` FileProvider yapılandırması
-  - Kabul: Türkçe karakterli ad ile paylaşma ve açma çalışıyor.
+- [x] **F-1.8 — Tekil dosya işlemleri**
+  - Dosyaya tıklayınca `ACTION_VIEW` ile açılıyor; açacak uygulama yoksa snackbar
+  - Paylaşma `ShareCompat` ile (aşağıdaki nota bakın), tek ve çoklu seçim
+  - Yeniden adlandırma, yeni klasör, yeni dosya (FAB menüsü) — ortak `NameInputDialog`;
+    yeniden adlandırmada uzantı seçimin dışında bırakılıyor
+  - Özellikler diyaloğu: konum, boyut, tür, tarih, `rwx` izinleri, görsel/video için
+    çözünürlük ve süre. Klasör boyutu ayrı hesaplanıp spinner'la gösteriliyor.
+  - `FileProvider` + `file_paths.xml`; `MediaMetadataReader` arayüzü (testlerde sahte)
+  - Kabul: emülatörde Türkçe adlı dosya (`şubat çalışması.png`) Google Photos'ta
+    açıldı, paylaşım seçicisi önizlemeyle geldi, özellikler diyaloğu çözünürlüğü
+    (1080×2340) doğru gösterdi. ✅
+  - **Cihazda bulunan üç hata:**
+    1. `Intent.createChooser` sarmalayınca sistem seçicisi URI'yi okuyamıyordu
+       (`Permission Denial`, önizleme boş kalıyordu) — `ShareCompat.IntentBuilder`
+       akışları `ClipData` olarak da eklediği için izin seçiciye taşınıyor.
+    2. FAB, alt çubukların üstüne biniyordu — çubuklar `Scaffold`'un `bottomBar`
+       yuvasına taşındı.
+    3. Seçim çubuğundaki sekiz ikon sayacı ve kapatma düğmesini ekrandan taşırıyordu —
+       yeniden adlandır/özellikler/tümünü seç/ters çevir taşma menüsüne alındı.
+  - **Lint'in yakaladığı hata:** `MediaMetadataRetriever.use {}` API 29 gerektiriyor,
+    minSdk 26'da çökerdi; `try/finally` + `release()` ile değiştirildi.
+  - 16 yeni test (repoda 102).
+  - **F-1.11'e not:** beyaz/açık renkli görsellerin küçük resmi açık zeminde görünmüyor;
+    thumbnail'lere ince bir çerçeve veya zemin gerekiyor.
 
 - [ ] **F-1.9 — Arama**
   - `SearchUseCase`: özyinelemeli, akışlı (`Flow<FileNode>`), iptal edilebilir,

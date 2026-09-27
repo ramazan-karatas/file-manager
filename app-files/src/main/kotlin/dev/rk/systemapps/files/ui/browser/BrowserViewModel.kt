@@ -11,6 +11,8 @@ import dev.rk.systemapps.files.data.preferences.FilesPreferences
 import dev.rk.systemapps.files.domain.model.BrowserPrefs
 import dev.rk.systemapps.files.domain.model.ClipboardMode
 import dev.rk.systemapps.files.domain.model.Conflict
+import dev.rk.systemapps.files.domain.model.DirectoryStats
+import dev.rk.systemapps.files.domain.model.FileDetails
 import dev.rk.systemapps.files.domain.model.ConflictDecision
 import dev.rk.systemapps.files.domain.model.FileClipboard
 import dev.rk.systemapps.files.domain.model.FileOperation
@@ -42,6 +44,20 @@ enum class BrowserError {
     UNKNOWN,
 }
 
+/** Ad girişi hatası; metin UI tarafında çözülür. */
+enum class NameError {
+    ALREADY_EXISTS,
+    INVALID,
+    FAILED,
+}
+
+sealed interface BrowserDialog {
+    data class Rename(val node: FileNode) : BrowserDialog
+    data object NewFolder : BrowserDialog
+    data object NewFile : BrowserDialog
+    data class Properties(val details: FileDetails) : BrowserDialog
+}
+
 data class BrowserUiState(
     val path: String = "",
     val crumbs: List<Crumb> = emptyList(),
@@ -53,6 +69,10 @@ data class BrowserUiState(
     val clipboard: FileClipboard? = null,
     val operation: OperationProgress? = null,
     val conflict: Conflict? = null,
+    val dialog: BrowserDialog? = null,
+    /** Özellikler diyaloğundaki klasör boyutu; hesaplanana kadar null. */
+    val directoryStats: DirectoryStats? = null,
+    val nameError: NameError? = null,
 ) {
     val isEmpty: Boolean get() = !isLoading && error == null && items.isEmpty()
 
@@ -61,6 +81,12 @@ data class BrowserUiState(
     val allSelected: Boolean get() = items.isNotEmpty() && selectedIds.size == items.size
 
     val hasClipboard: Boolean get() = clipboard?.isEmpty == false
+
+    /** Yeniden adlandırma ve özellikler yalnızca tek öğe seçiliyken anlamlı. */
+    val singleSelection: FileNode?
+        get() = items.singleOrNull { it.id in selectedIds }?.takeIf { selectedIds.size == 1 }
+
+    val selectedNodes: List<FileNode> get() = items.filter { it.id in selectedIds }
 }
 
 sealed interface BrowserAction {
@@ -87,6 +113,14 @@ sealed interface BrowserAction {
     data object ClearClipboard : BrowserAction
     data class ResolveConflict(val decision: ConflictDecision) : BrowserAction
     data object CancelOperation : BrowserAction
+
+    // F-1.8 — tekil işlemler
+    data object ShowRename : BrowserAction
+    data object ShowNewFolder : BrowserAction
+    data object ShowNewFile : BrowserAction
+    data object ShowProperties : BrowserAction
+    data object DismissDialog : BrowserAction
+    data class ConfirmName(val name: String) : BrowserAction
 }
 
 /** Tek seferlik bildirimler (özet mesajı gibi); duruma yazılmaz ki tekrar gösterilmesin. */
@@ -130,18 +164,21 @@ class BrowserViewModel @Inject constructor(
     private val selectedIds: StateFlow<List<String>> =
         savedStateHandle.getStateFlow(KEY_SELECTED_IDS, emptyList())
 
-    private val operationState = combine(
+    private val localState = MutableStateFlow(LocalState())
+
+    private val auxState = combine(
         operations.state,
         operations.pendingConflict,
-    ) { queue, conflict -> queue.current to conflict }
+        localState,
+    ) { queue, conflict, local -> AuxState(queue.current, conflict, local) }
 
     val uiState: StateFlow<BrowserUiState> = combine(
         listing,
         preferences.browserPrefs,
         selectedIds,
         preferences.clipboard,
-        operationState,
-    ) { listingState, prefs, selected, clipboard, (progress, conflict) ->
+        auxState,
+    ) { listingState, prefs, selected, clipboard, aux ->
         val presentIds = listingState.items.mapTo(HashSet(listingState.items.size)) { it.id }
         BrowserUiState(
             path = path,
@@ -153,8 +190,11 @@ class BrowserViewModel @Inject constructor(
             // Silinen/kaybolan öğeler seçili kalmamalı.
             selectedIds = selected.filterTo(mutableSetOf()) { it in presentIds },
             clipboard = clipboard,
-            operation = progress,
-            conflict = conflict,
+            operation = aux.progress,
+            conflict = aux.conflict,
+            dialog = aux.local.dialog,
+            directoryStats = aux.local.directoryStats,
+            nameError = aux.local.nameError,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -225,7 +265,81 @@ class BrowserViewModel @Inject constructor(
             is BrowserAction.ResolveConflict -> operations.resolveConflict(action.decision)
 
             BrowserAction.CancelOperation -> operations.cancelCurrent()
+
+            BrowserAction.ShowRename -> currentSingleSelection()?.let { node ->
+                localState.update { it.copy(dialog = BrowserDialog.Rename(node), nameError = null) }
+            }
+
+            BrowserAction.ShowNewFolder ->
+                localState.update { it.copy(dialog = BrowserDialog.NewFolder, nameError = null) }
+
+            BrowserAction.ShowNewFile ->
+                localState.update { it.copy(dialog = BrowserDialog.NewFile, nameError = null) }
+
+            BrowserAction.ShowProperties -> showProperties()
+
+            BrowserAction.DismissDialog -> localState.value = LocalState()
+
+            is BrowserAction.ConfirmName -> confirmName(action.name)
         }
+    }
+
+    private fun currentSingleSelection(): FileNode? {
+        val selected = selectedIds.value
+        if (selected.size != 1) return null
+        return listing.value.items.firstOrNull { it.id == selected.single() }
+    }
+
+    private fun showProperties() {
+        val node = currentSingleSelection() ?: return
+        viewModelScope.launch {
+            when (val outcome = repository.details(node.id)) {
+                is Outcome.Success -> {
+                    localState.update {
+                        it.copy(dialog = BrowserDialog.Properties(outcome.value))
+                    }
+                    if (node.isDirectory) {
+                        // Ağaç dolaşımı pahalı; diyalog açıkken arkada hesaplanır.
+                        val stats = repository.directoryStats(node.id)
+                        if (stats is Outcome.Success) {
+                            localState.update { it.copy(directoryStats = stats.value) }
+                        }
+                    }
+                }
+
+                is Outcome.Failure -> localState.update { it.copy(nameError = NameError.FAILED) }
+            }
+        }
+    }
+
+    private fun confirmName(name: String) {
+        val dialog = localState.value.dialog ?: return
+        viewModelScope.launch {
+            val outcome = when (dialog) {
+                is BrowserDialog.Rename -> repository.rename(dialog.node.id, name)
+                BrowserDialog.NewFolder -> repository.createDirectory(path, name)
+                BrowserDialog.NewFile -> repository.createFile(path, name)
+                is BrowserDialog.Properties -> return@launch
+            }
+
+            when (outcome) {
+                is Outcome.Success -> {
+                    localState.value = LocalState()
+                    setSelection { emptyList() }
+                    loadWith(latestPrefs)
+                }
+
+                is Outcome.Failure -> localState.update {
+                    it.copy(nameError = outcome.toNameError())
+                }
+            }
+        }
+    }
+
+    private fun Outcome.Failure.toNameError(): NameError = when {
+        throwable is IllegalArgumentException -> NameError.INVALID
+        message?.contains("zaten var") == true -> NameError.ALREADY_EXISTS
+        else -> NameError.FAILED
     }
 
     private fun putOnClipboard(mode: ClipboardMode) {
@@ -281,6 +395,18 @@ class BrowserViewModel @Inject constructor(
         is IOException -> BrowserError.NOT_READABLE
         else -> BrowserError.UNKNOWN
     }
+
+    private data class LocalState(
+        val dialog: BrowserDialog? = null,
+        val directoryStats: DirectoryStats? = null,
+        val nameError: NameError? = null,
+    )
+
+    private data class AuxState(
+        val progress: OperationProgress?,
+        val conflict: Conflict?,
+        val local: LocalState,
+    )
 
     private data class Listing(
         val items: List<FileNode> = emptyList(),

@@ -79,4 +79,37 @@
     <plurals name="operation_done_with_failures">
         <item quantity="other">İşlem bitti, %1$d öğe atlandı</item>
     </plurals>
+
+    <!-- Tekil dosya işlemleri -->
+    <string name="action_share">Paylaş</string>
+    <string name="action_rename">Yeniden adlandır</string>
+    <string name="action_properties">Özellikler</string>
+    <string name="action_close">Kapat</string>
+    <string name="action_save">Kaydet</string>
+    <string name="action_create">Oluştur</string>
+    <string name="action_new_folder">Yeni klasör</string>
+    <string name="action_new_file">Yeni dosya</string>
+    <string name="action_new">Yeni</string>
+    <string name="dialog_rename_title">Yeniden adlandır</string>
+    <string name="dialog_new_folder_title">Yeni klasör</string>
+    <string name="dialog_new_file_title">Yeni dosya</string>
+    <string name="name_error_exists">Bu adda bir öğe zaten var.</string>
+    <string name="name_error_invalid">Bu ad kullanılamaz.</string>
+    <string name="name_error_failed">İşlem başarısız oldu.</string>
+    <string name="properties_path">Konum</string>
+    <string name="properties_size">Boyut</string>
+    <string name="properties_items">İçerik</string>
+    <string name="properties_type">Tür</string>
+    <string name="properties_type_unknown">Bilinmiyor</string>
+    <string name="properties_modified">Değiştirilme</string>
+    <string name="properties_permissions">İzinler</string>
+    <string name="properties_resolution">Çözünürlük</string>
+    <string name="properties_duration">Süre</string>
+    <string name="properties_calculating">Hesaplanıyor…</string>
+    <string name="open_failed">Bu dosyayı açabilecek bir uygulama yok.</string>
+    <string name="share_failed">Paylaşım uygulaması bulunamadı.</string>
+    <plurals name="properties_item_count">
+        <item quantity="other">%1$d öğe</item>
+    </plurals>
+    <string name="action_more">Daha fazla</string>
 </resources>

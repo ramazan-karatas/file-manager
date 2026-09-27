@@ -83,4 +83,38 @@
         <item quantity="one">Finished, %1$d item skipped</item>
         <item quantity="other">Finished, %1$d items skipped</item>
     </plurals>
+
+    <!-- Single file actions -->
+    <string name="action_share">Share</string>
+    <string name="action_rename">Rename</string>
+    <string name="action_properties">Properties</string>
+    <string name="action_close">Close</string>
+    <string name="action_save">Save</string>
+    <string name="action_create">Create</string>
+    <string name="action_new_folder">New folder</string>
+    <string name="action_new_file">New file</string>
+    <string name="action_new">New</string>
+    <string name="dialog_rename_title">Rename</string>
+    <string name="dialog_new_folder_title">New folder</string>
+    <string name="dialog_new_file_title">New file</string>
+    <string name="name_error_exists">An item with this name already exists.</string>
+    <string name="name_error_invalid">This name cannot be used.</string>
+    <string name="name_error_failed">The operation failed.</string>
+    <string name="properties_path">Location</string>
+    <string name="properties_size">Size</string>
+    <string name="properties_items">Contents</string>
+    <string name="properties_type">Type</string>
+    <string name="properties_type_unknown">Unknown</string>
+    <string name="properties_modified">Modified</string>
+    <string name="properties_permissions">Permissions</string>
+    <string name="properties_resolution">Resolution</string>
+    <string name="properties_duration">Duration</string>
+    <string name="properties_calculating">Calculating…</string>
+    <string name="open_failed">No app can open this file.</string>
+    <string name="share_failed">No sharing app found.</string>
+    <plurals name="properties_item_count">
+        <item quantity="one">%1$d item</item>
+        <item quantity="other">%1$d items</item>
+    </plurals>
+    <string name="action_more">More</string>
 </resources>

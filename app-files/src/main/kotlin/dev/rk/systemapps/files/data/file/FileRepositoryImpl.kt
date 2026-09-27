@@ -3,6 +3,8 @@ package dev.rk.systemapps.files.data.file
 import dev.rk.systemapps.core.common.coroutines.DispatcherProvider
 import dev.rk.systemapps.core.common.result.Outcome
 import dev.rk.systemapps.core.common.result.outcomeOf
+import dev.rk.systemapps.files.domain.model.DirectoryStats
+import dev.rk.systemapps.files.domain.model.FileDetails
 import dev.rk.systemapps.files.domain.model.FileNode
 import dev.rk.systemapps.files.domain.model.ListingOptions
 import dev.rk.systemapps.files.domain.repository.FileRepository
@@ -33,4 +35,20 @@ class FileRepositoryImpl(
     override suspend fun exists(id: String): Boolean = withContext(dispatchers.io) {
         dataSource.exists(id)
     }
+
+    override suspend fun details(id: String): Outcome<FileDetails> = withContext(dispatchers.io) {
+        outcomeOf { dataSource.details(id) }
+    }
+
+    override suspend fun directoryStats(id: String): Outcome<DirectoryStats> =
+        withContext(dispatchers.io) { outcomeOf { dataSource.directoryStats(id) } }
+
+    override suspend fun rename(id: String, newName: String): Outcome<FileNode> =
+        withContext(dispatchers.io) { outcomeOf { dataSource.rename(id, newName) } }
+
+    override suspend fun createDirectory(parentId: String, name: String): Outcome<FileNode> =
+        withContext(dispatchers.io) { outcomeOf { dataSource.createDirectory(parentId, name) } }
+
+    override suspend fun createFile(parentId: String, name: String): Outcome<FileNode> =
+        withContext(dispatchers.io) { outcomeOf { dataSource.createFile(parentId, name) } }
 }

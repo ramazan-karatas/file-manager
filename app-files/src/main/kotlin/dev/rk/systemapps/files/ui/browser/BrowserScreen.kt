@@ -27,7 +27,14 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Sort
 import androidx.compose.material.icons.automirrored.outlined.ViewList
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.CreateNewFolder
+import androidx.compose.material.icons.outlined.DriveFileRenameOutline
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.MoreVert
+import androidx.compose.material.icons.automirrored.outlined.NoteAdd
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.ContentCut
 import androidx.compose.material.icons.outlined.Delete
@@ -38,6 +45,7 @@ import androidx.compose.material.icons.outlined.SelectAll
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -52,6 +60,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -80,6 +89,7 @@ import dev.rk.systemapps.files.domain.model.BrowserPrefs
 import dev.rk.systemapps.files.domain.model.FileNode
 import dev.rk.systemapps.files.domain.model.LocalFileNode
 import dev.rk.systemapps.files.domain.model.OperationState
+import kotlinx.coroutines.launch
 import dev.rk.systemapps.files.domain.model.SortBy
 
 @Composable
@@ -101,6 +111,9 @@ fun BrowserRoute(
     val snackbarHostState = remember { SnackbarHostState() }
     val doneMessage = stringResource(R.string.operation_done)
     val cancelledMessage = stringResource(R.string.operation_cancelled)
+    val openFailedMessage = stringResource(R.string.open_failed)
+    val shareFailedMessage = stringResource(R.string.share_failed)
+    val scope = rememberCoroutineScope()
     val resources = LocalResources.current
 
     LaunchedEffect(viewModel) {
@@ -141,8 +154,16 @@ fun BrowserRoute(
             viewModel.onAction(action)
         },
         onItemClick = { node ->
-            // Dosya açma F-1.8'de gelecek; şimdilik yalnızca klasörler gezilebilir.
-            if (node.isDirectory) onNavigateToFolder(node.id)
+            if (node.isDirectory) {
+                onNavigateToFolder(node.id)
+            } else if (!FileActions.open(context, node)) {
+                scope.launch { snackbarHostState.showSnackbar(openFailedMessage) }
+            }
+        },
+        onShare = { nodes ->
+            if (!FileActions.share(context, nodes)) {
+                scope.launch { snackbarHostState.showSnackbar(shareFailedMessage) }
+            }
         },
         onNavigateUp = onNavigateUp,
         onCrumbClick = { crumb ->
@@ -163,6 +184,7 @@ fun BrowserScreen(
     uiState: BrowserUiState,
     onAction: (BrowserAction) -> Unit,
     onItemClick: (FileNode) -> Unit,
+    onShare: (List<FileNode>) -> Unit,
     onNavigateUp: () -> Unit,
     onCrumbClick: (Crumb) -> Unit,
     modifier: Modifier = Modifier,
@@ -194,6 +216,43 @@ fun BrowserScreen(
         )
     }
 
+    when (val dialog = uiState.dialog) {
+        is BrowserDialog.Rename -> NameInputDialog(
+            title = stringResource(R.string.dialog_rename_title),
+            initialName = dialog.node.name,
+            confirmLabel = stringResource(R.string.action_save),
+            onConfirm = { name -> onAction(BrowserAction.ConfirmName(name)) },
+            onDismiss = { onAction(BrowserAction.DismissDialog) },
+            errorMessage = uiState.nameError?.let { stringResource(it.messageRes()) },
+        )
+
+        BrowserDialog.NewFolder -> NameInputDialog(
+            title = stringResource(R.string.dialog_new_folder_title),
+            initialName = "",
+            confirmLabel = stringResource(R.string.action_create),
+            onConfirm = { name -> onAction(BrowserAction.ConfirmName(name)) },
+            onDismiss = { onAction(BrowserAction.DismissDialog) },
+            errorMessage = uiState.nameError?.let { stringResource(it.messageRes()) },
+        )
+
+        BrowserDialog.NewFile -> NameInputDialog(
+            title = stringResource(R.string.dialog_new_file_title),
+            initialName = "",
+            confirmLabel = stringResource(R.string.action_create),
+            onConfirm = { name -> onAction(BrowserAction.ConfirmName(name)) },
+            onDismiss = { onAction(BrowserAction.DismissDialog) },
+            errorMessage = uiState.nameError?.let { stringResource(it.messageRes()) },
+        )
+
+        is BrowserDialog.Properties -> PropertiesDialog(
+            details = dialog.details,
+            stats = uiState.directoryStats,
+            onDismiss = { onAction(BrowserAction.DismissDialog) },
+        )
+
+        null -> Unit
+    }
+
     uiState.conflict?.let { conflict ->
         ConflictDialog(
             conflict = conflict,
@@ -204,6 +263,29 @@ fun BrowserScreen(
     Scaffold(
         modifier = modifier,
         snackbarHost = { SnackbarHost(snackbarHostState) },
+        floatingActionButton = {
+            if (!uiState.selectionActive && uiState.error == null) {
+                NewItemFab(onAction = onAction)
+            }
+        },
+        bottomBar = {
+            // Scaffold yuvası kullanılıyor ki FAB bu çubukların üstünde konumlansın.
+            Column {
+                uiState.operation?.let { progress ->
+                    OperationProgressBar(
+                        progress = progress,
+                        onCancel = { onAction(BrowserAction.CancelOperation) },
+                    )
+                }
+                uiState.clipboard?.takeIf { !it.isEmpty }?.let { clipboard ->
+                    PasteBar(
+                        clipboard = clipboard,
+                        onPaste = { onAction(BrowserAction.Paste) },
+                        onCancel = { onAction(BrowserAction.ClearClipboard) },
+                    )
+                }
+            }
+        },
         topBar = {
             if (uiState.selectionActive) {
                 SelectionTopBar(
@@ -211,20 +293,8 @@ fun BrowserScreen(
                     onClose = { onAction(BrowserAction.ClearSelection) },
                     closeContentDescription = stringResource(R.string.action_close_selection),
                     actions = {
-                        IconButton(onClick = { onAction(BrowserAction.SelectAll) }) {
-                            Icon(
-                                imageVector = Icons.Outlined.SelectAll,
-                                contentDescription = stringResource(R.string.action_select_all),
-                            )
-                        }
-                        IconButton(onClick = { onAction(BrowserAction.InvertSelection) }) {
-                            Icon(
-                                imageVector = Icons.Outlined.Deselect,
-                                contentDescription = stringResource(
-                                    R.string.action_invert_selection,
-                                ),
-                            )
-                        }
+                        // Üst çubuğa yalnızca sık kullanılan dört işlem sığdırılıyor;
+                        // fazlası sayacı ve kapatma düğmesini ekrandan taşırıyordu.
                         IconButton(onClick = { onAction(BrowserAction.CopySelection) }) {
                             Icon(
                                 imageVector = Icons.Outlined.ContentCopy,
@@ -243,6 +313,13 @@ fun BrowserScreen(
                                 contentDescription = stringResource(R.string.action_delete),
                             )
                         }
+                        IconButton(onClick = { onShare(uiState.selectedNodes) }) {
+                            Icon(
+                                imageVector = Icons.Outlined.Share,
+                                contentDescription = stringResource(R.string.action_share),
+                            )
+                        }
+                        SelectionOverflowMenu(uiState = uiState, onAction = onAction)
                     },
                 )
             } else {
@@ -322,21 +399,6 @@ fun BrowserScreen(
                     )
                 }
             }
-
-            uiState.operation?.let { progress ->
-                OperationProgressBar(
-                    progress = progress,
-                    onCancel = { onAction(BrowserAction.CancelOperation) },
-                )
-            }
-
-            uiState.clipboard?.takeIf { !it.isEmpty }?.let { clipboard ->
-                PasteBar(
-                    clipboard = clipboard,
-                    onPaste = { onAction(BrowserAction.Paste) },
-                    onCancel = { onAction(BrowserAction.ClearClipboard) },
-                )
-            }
         }
     }
 }
@@ -392,6 +454,94 @@ private fun SortMenu(prefs: BrowserPrefs, onAction: (BrowserAction) -> Unit) {
             },
         )
     }
+}
+
+@Composable
+private fun SelectionOverflowMenu(
+    uiState: BrowserUiState,
+    onAction: (BrowserAction) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val singleSelection = uiState.singleSelection != null
+
+    IconButton(onClick = { expanded = true }) {
+        Icon(
+            imageVector = Icons.Outlined.MoreVert,
+            contentDescription = stringResource(R.string.action_more),
+        )
+    }
+
+    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        // Yeniden adlandırma ve özellikler yalnızca tek öğede anlamlı.
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.action_rename)) },
+            enabled = singleSelection,
+            onClick = {
+                expanded = false
+                onAction(BrowserAction.ShowRename)
+            },
+        )
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.action_properties)) },
+            enabled = singleSelection,
+            onClick = {
+                expanded = false
+                onAction(BrowserAction.ShowProperties)
+            },
+        )
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.action_select_all)) },
+            onClick = {
+                expanded = false
+                onAction(BrowserAction.SelectAll)
+            },
+        )
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.action_invert_selection)) },
+            onClick = {
+                expanded = false
+                onAction(BrowserAction.InvertSelection)
+            },
+        )
+    }
+}
+
+@Composable
+private fun NewItemFab(onAction: (BrowserAction) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Box {
+        FloatingActionButton(onClick = { expanded = true }) {
+            Icon(
+                imageVector = Icons.Outlined.Add,
+                contentDescription = stringResource(R.string.action_new),
+            )
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.action_new_folder)) },
+                onClick = {
+                    expanded = false
+                    onAction(BrowserAction.ShowNewFolder)
+                },
+                leadingIcon = { Icon(Icons.Outlined.CreateNewFolder, contentDescription = null) },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.action_new_file)) },
+                onClick = {
+                    expanded = false
+                    onAction(BrowserAction.ShowNewFile)
+                },
+                leadingIcon = { Icon(Icons.AutoMirrored.Outlined.NoteAdd, contentDescription = null) },
+            )
+        }
+    }
+}
+
+private fun NameError.messageRes(): Int = when (this) {
+    NameError.ALREADY_EXISTS -> R.string.name_error_exists
+    NameError.INVALID -> R.string.name_error_invalid
+    NameError.FAILED -> R.string.name_error_failed
 }
 
 @Composable
@@ -523,6 +673,7 @@ private fun BrowserScreenPreview() {
             uiState = previewState(),
             onAction = {},
             onItemClick = {},
+            onShare = {},
             onNavigateUp = {},
             onCrumbClick = {},
         )
@@ -538,6 +689,7 @@ private fun BrowserScreenSelectionPreview() {
             uiState = state.copy(selectedIds = setOf(state.items[1].id)),
             onAction = {},
             onItemClick = {},
+            onShare = {},
             onNavigateUp = {},
             onCrumbClick = {},
         )

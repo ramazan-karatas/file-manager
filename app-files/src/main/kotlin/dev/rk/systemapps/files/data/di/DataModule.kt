@@ -1,6 +1,7 @@
 package dev.rk.systemapps.files.data.di
 
 import dev.rk.systemapps.core.common.coroutines.DispatcherProvider
+import dev.rk.systemapps.files.data.file.AndroidMediaMetadataReader
 import dev.rk.systemapps.files.data.file.AndroidMimeTypeResolver
 import dev.rk.systemapps.files.data.file.FileRepositoryImpl
 import dev.rk.systemapps.files.data.file.LocalFileDataSource
@@ -9,6 +10,7 @@ import dev.rk.systemapps.files.data.operation.AndroidOperationServiceController
 import dev.rk.systemapps.files.data.operation.FileOperationEngine
 import dev.rk.systemapps.files.data.operation.MediaScanner
 import dev.rk.systemapps.files.data.operation.OperationServiceController
+import dev.rk.systemapps.files.domain.MediaMetadataReader
 import dev.rk.systemapps.files.domain.MimeTypeResolver
 import dev.rk.systemapps.files.domain.repository.FileRepository
 import dagger.Module
@@ -27,8 +29,14 @@ object DataModule {
 
     @Provides
     @Singleton
-    fun provideLocalFileDataSource(resolver: MimeTypeResolver): LocalFileDataSource =
-        LocalFileDataSource(resolver)
+    fun provideMediaMetadataReader(): MediaMetadataReader = AndroidMediaMetadataReader()
+
+    @Provides
+    @Singleton
+    fun provideLocalFileDataSource(
+        resolver: MimeTypeResolver,
+        mediaMetadataReader: MediaMetadataReader,
+    ): LocalFileDataSource = LocalFileDataSource(resolver, mediaMetadataReader)
 
     @Provides
     @Singleton
