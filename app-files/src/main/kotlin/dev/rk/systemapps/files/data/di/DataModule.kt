@@ -10,6 +10,8 @@ import dev.rk.systemapps.files.data.operation.AndroidOperationServiceController
 import dev.rk.systemapps.files.data.operation.FileOperationEngine
 import dev.rk.systemapps.files.data.operation.MediaScanner
 import dev.rk.systemapps.files.data.operation.OperationServiceController
+import dev.rk.systemapps.files.data.media.MediaCatalog
+import dev.rk.systemapps.files.data.media.MediaStoreDataSource
 import dev.rk.systemapps.files.domain.MediaMetadataReader
 import dev.rk.systemapps.files.domain.MimeTypeResolver
 import dev.rk.systemapps.files.domain.repository.FileRepository
@@ -51,6 +53,10 @@ object DataModule {
     fun provideOperationServiceController(
         controller: AndroidOperationServiceController,
     ): OperationServiceController = controller
+
+    @Provides
+    @Singleton
+    fun provideMediaCatalog(dataSource: MediaStoreDataSource): MediaCatalog = dataSource
 
     @Provides
     @Singleton

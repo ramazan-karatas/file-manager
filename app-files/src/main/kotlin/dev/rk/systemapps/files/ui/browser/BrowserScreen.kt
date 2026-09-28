@@ -6,10 +6,6 @@ import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,8 +14,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -27,7 +21,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CreateNewFolder
 import androidx.compose.material.icons.outlined.DriveFileRenameOutline
@@ -65,13 +58,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -90,6 +80,9 @@ import dev.rk.systemapps.files.R
 import dev.rk.systemapps.files.domain.model.FileNode
 import dev.rk.systemapps.files.domain.model.LocalFileNode
 import dev.rk.systemapps.files.domain.model.OperationState
+import dev.rk.systemapps.files.ui.component.FileGridMinTileSize
+import dev.rk.systemapps.files.ui.component.FileGridTile
+import dev.rk.systemapps.files.ui.component.ViewOptionsSheet
 import kotlinx.coroutines.launch
 
 @Composable
@@ -202,10 +195,14 @@ fun BrowserScreen(
     var optionsVisible by rememberSaveable { mutableStateOf(false) }
 
     if (optionsVisible) {
-        BrowserOptionsSheet(
+        ViewOptionsSheet(
             prefs = uiState.prefs,
-            onAction = onAction,
+            onSetSortBy = { sortBy -> onAction(BrowserAction.SetSortBy(sortBy)) },
+            onToggleSortDirection = { onAction(BrowserAction.ToggleSortDirection) },
+            onToggleViewMode = { onAction(BrowserAction.ToggleViewMode) },
             onDismiss = { optionsVisible = false },
+            onToggleFoldersFirst = { onAction(BrowserAction.ToggleFoldersFirst) },
+            onToggleShowHidden = { onAction(BrowserAction.ToggleShowHidden) },
         )
     }
 
@@ -533,7 +530,6 @@ private fun FileList(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun FileGrid(
     uiState: BrowserUiState,
@@ -542,14 +538,14 @@ private fun FileGrid(
     modifier: Modifier = Modifier,
 ) {
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 104.dp),
+        columns = GridCells.Adaptive(minSize = FileGridMinTileSize),
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         items(items = uiState.items, key = { it.id }) { node ->
-            GridTile(
+            FileGridTile(
                 node = node,
                 selected = node.id in uiState.selectedIds,
                 onClick = {
@@ -562,59 +558,6 @@ private fun FileGrid(
                 onLongClick = { onAction(BrowserAction.ToggleSelection(node.id)) },
             )
         }
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun GridTile(
-    node: FileNode,
-    selected: Boolean,
-    onClick: () -> Unit,
-    onLongClick: () -> Unit,
-) {
-    val background by animateColorAsState(
-        targetValue = if (selected) {
-            MaterialTheme.colorScheme.secondaryContainer
-        } else {
-            Color.Transparent
-        },
-        label = "GridTileSelection",
-    )
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(background)
-            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
-            .padding(vertical = 12.dp, horizontal = 6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        // Liste satırındaki gibi: önizleme kalır, onay rozeti üstüne biner.
-        Box(contentAlignment = Alignment.Center) {
-            FileThumbnail(node = node, size = 56.dp, cornerRadius = 12.dp)
-            if (selected) {
-                Icon(
-                    imageVector = Icons.Filled.CheckCircle,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .size(20.dp)
-                        .background(MaterialTheme.colorScheme.surface, CircleShape),
-                )
-            }
-        }
-        Text(
-            text = node.name,
-            style = MaterialTheme.typography.bodySmall,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 8.dp),
-        )
     }
 }
 

@@ -36,6 +36,15 @@ medya oynatma (harici uygulamaya intent gönderilir), metin editörü.
 - **Depolama kartları:** Dahili depolama (kullanılan/toplam + progress bar), SD kart, USB OTG.
 - **Kategoriler:** İndirilenler, Görseller, Video, Ses, Belgeler, APK, Arşivler.
   Kategori bir klasör değil, MIME filtreli bir MediaStore sorgusudur.
+  - İndirilenler gerçek bir klasördür (`Download`) ve gezginde açılır; diğerleri
+    `CategoryScreen`'de açılır.
+  - `CategoryScreen` gezginle aynı **seçenekler sayfasını** kullanır: liste/ızgara
+    görünümü ve sıralama ölçütü/yönü. Tercih gezginle **ortaktır**; ayrı bir kategori
+    tercihi tutulmaz. "Klasörler üstte" ve "gizli dosyalar" anahtarları burada
+    gösterilmez — listede klasör yoktur ve MediaStore gizli dosyaları indekslemez.
+  - Sıralama MediaStore sorgusunu tekrarlamaz: sorgu bir kez çalışır (en yeni 500
+    kayıt, `DATE_MODIFIED DESC`), sonra bu liste bellekte yeniden sıralanır. Yani
+    "ada göre" sıralama, en son değişmiş 500 dosya içinde sıralar.
 - **Kısayollar:** kullanıcının yıldızladığı klasörler (M2).
 - **Son değişenler:** son 7 günde değişmiş 20 dosya (MediaStore `DATE_MODIFIED`).
 

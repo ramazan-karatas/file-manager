@@ -6,6 +6,8 @@ import dev.rk.systemapps.files.domain.model.BrowserPrefs
 import dev.rk.systemapps.files.domain.model.DirectoryStats
 import dev.rk.systemapps.files.domain.model.FileDetails
 import dev.rk.systemapps.files.domain.model.FileClipboard
+import dev.rk.systemapps.files.data.media.MediaCatalog
+import dev.rk.systemapps.files.domain.model.FileCategory
 import dev.rk.systemapps.files.domain.model.FileNode
 import dev.rk.systemapps.files.domain.model.ListingOptions
 import dev.rk.systemapps.files.domain.repository.FileRepository
@@ -97,4 +99,20 @@ class FakeFilesPreferences(
     override suspend fun setBrowserPrefs(prefs: BrowserPrefs) {
         this.prefs.value = prefs
     }
+}
+
+class FakeMediaCatalog(
+    var results: List<FileNode> = emptyList(),
+) : MediaCatalog {
+
+    /** Sorgunun kaç kez çalıştığı; tercih değişince yeniden sorgulanmadığı doğrulanır. */
+    var queryCount: Int = 0
+        private set
+
+    override fun query(category: FileCategory, limit: Int): List<FileNode> {
+        queryCount++
+        return results
+    }
+
+    override fun recent(limit: Int, withinDays: Int): List<FileNode> = results
 }

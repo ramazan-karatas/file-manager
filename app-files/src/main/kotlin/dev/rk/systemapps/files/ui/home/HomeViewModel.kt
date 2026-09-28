@@ -8,7 +8,7 @@ import dev.rk.systemapps.core.storage.model.StorageVolumeInfo
 import dev.rk.systemapps.core.storage.permission.StorageAccessLevel
 import dev.rk.systemapps.core.storage.permission.StoragePermissionChecker
 import dev.rk.systemapps.core.storage.volume.StorageLocations
-import dev.rk.systemapps.files.data.media.MediaStoreDataSource
+import dev.rk.systemapps.files.data.media.MediaCatalog
 import dev.rk.systemapps.files.domain.model.FileNode
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,7 +35,7 @@ sealed interface HomeAction {
 class HomeViewModel @Inject constructor(
     private val permissionChecker: StoragePermissionChecker,
     private val storageLocations: StorageLocations,
-    private val mediaStore: MediaStoreDataSource,
+    private val mediaStore: MediaCatalog,
     private val dispatchers: DispatcherProvider,
 ) : ViewModel() {
 

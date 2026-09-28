@@ -12,6 +12,26 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
+ * Kategori ve "son değişenler" listelerinin kaynağı. Arayüz olmasının sebebi
+ * `ContentResolver`'ın JVM testlerinde çalışmaması; testler sahte bir uygulama verir.
+ */
+interface MediaCatalog {
+
+    fun query(category: FileCategory, limit: Int = DEFAULT_LIMIT): List<FileNode>
+
+    /** Son [withinDays] günde değişmiş dosyalar, yeniden eskiye. */
+    fun recent(
+        limit: Int = DEFAULT_LIMIT,
+        withinDays: Int = RECENT_DAYS,
+    ): List<FileNode>
+
+    companion object {
+        const val DEFAULT_LIMIT = 500
+        const val RECENT_DAYS = 7
+    }
+}
+
+/**
  * Kategori listeleri ve "son değişenler" için MediaStore sorguları (docs/files/SPEC.md §3.1).
  *
  * Kimlik olarak `DATA` (tam yol) okunuyor: uygulamanın geri kalanı [FileNode.id]'yi yol
@@ -21,15 +41,14 @@ import javax.inject.Singleton
 @Singleton
 class MediaStoreDataSource @Inject constructor(
     @param:ApplicationContext private val context: Context,
-) {
+) : MediaCatalog {
 
-    fun query(category: FileCategory, limit: Int = DEFAULT_LIMIT): List<FileNode> {
+    override fun query(category: FileCategory, limit: Int): List<FileNode> {
         val (selection, args) = category.selection()
         return queryFiles(selection, args, "${MediaStore.Files.FileColumns.DATE_MODIFIED} DESC", limit)
     }
 
-    /** Son [limit] günde değişmiş dosyalar, yeniden eskiye. */
-    fun recent(limit: Int = DEFAULT_LIMIT, withinDays: Int = RECENT_DAYS): List<FileNode> {
+    override fun recent(limit: Int, withinDays: Int): List<FileNode> {
         val since = (System.currentTimeMillis() / 1000) - (withinDays * SECONDS_PER_DAY)
         return queryFiles(
             selection = "${MediaStore.Files.FileColumns.DATE_MODIFIED} >= ? AND " +
@@ -118,8 +137,6 @@ class MediaStoreDataSource @Inject constructor(
 
     private companion object {
         const val VOLUME_EXTERNAL = "external"
-        const val DEFAULT_LIMIT = 500
-        const val RECENT_DAYS = 7
         const val SECONDS_PER_DAY = 24 * 60 * 60
 
         val DOCUMENT_MIME_TYPES = arrayOf(

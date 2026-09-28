@@ -1,4 +1,4 @@
-package dev.rk.systemapps.files.ui.browser
+package dev.rk.systemapps.files.ui.component
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -38,19 +38,25 @@ import dev.rk.systemapps.files.domain.model.BrowserPrefs
 import dev.rk.systemapps.files.domain.model.SortBy
 
 /**
- * Görünüm ve sıralama tercihlerinin tek yeri (docs/files/SPEC.md §3.3).
+ * Görünüm ve sıralama tercihlerinin tek yeri (docs/files/SPEC.md §3.1, §3.2).
  *
- * Eskiden üst çubukta ayrı bir sıralama menüsü ve ayrı bir görünüm düğmesi vardı;
- * ikisi de tek bir sayfada toplandı. Gönderilen eylemler değişmedi, yalnızca
- * sunum değişti: segment düğmeleri "durum" gösterdiği için `Toggle*` eylemleri
- * yalnızca seçim gerçekten değiştiğinde gönderilir.
+ * Gezginde ve kategori ekranlarında aynı sayfa kullanılıyor. Kategori listesinde
+ * klasör bulunmadığı için [onToggleFoldersFirst] ve [onToggleShowHidden] null
+ * geçilebilir; o zaman ilgili satırlar çizilmez.
+ *
+ * Segment düğmeleri "durum" gösterdiği için geçiş eylemleri yalnızca seçim
+ * gerçekten değiştiğinde gönderilir.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BrowserOptionsSheet(
+fun ViewOptionsSheet(
     prefs: BrowserPrefs,
-    onAction: (BrowserAction) -> Unit,
+    onSetSortBy: (SortBy) -> Unit,
+    onToggleSortDirection: () -> Unit,
+    onToggleViewMode: () -> Unit,
     onDismiss: () -> Unit,
+    onToggleFoldersFirst: (() -> Unit)? = null,
+    onToggleShowHidden: (() -> Unit)? = null,
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -69,33 +75,38 @@ fun BrowserOptionsSheet(
             )
 
             SectionLabel(stringResource(R.string.options_view))
-            ViewModeSelector(gridMode = prefs.gridMode, onAction = onAction)
+            ViewModeSelector(gridMode = prefs.gridMode, onToggle = onToggleViewMode)
 
             SectionLabel(stringResource(R.string.options_sort_by))
-            SortBySelector(current = prefs.sortBy, onAction = onAction)
+            SortBySelector(current = prefs.sortBy, onSelect = onSetSortBy)
 
             SectionLabel(stringResource(R.string.options_sort_order))
-            SortOrderSelector(ascending = prefs.ascending, onAction = onAction)
+            SortOrderSelector(ascending = prefs.ascending, onToggle = onToggleSortDirection)
 
-            HorizontalDivider(modifier = Modifier.padding(top = 16.dp, bottom = 4.dp))
-
-            SwitchRow(
-                label = stringResource(R.string.sort_folders_first),
-                checked = prefs.foldersFirst,
-                onToggle = { onAction(BrowserAction.ToggleFoldersFirst) },
-            )
-            SwitchRow(
-                label = stringResource(R.string.sort_show_hidden),
-                checked = prefs.showHidden,
-                onToggle = { onAction(BrowserAction.ToggleShowHidden) },
-            )
+            if (onToggleFoldersFirst != null || onToggleShowHidden != null) {
+                HorizontalDivider(modifier = Modifier.padding(top = 16.dp, bottom = 4.dp))
+            }
+            onToggleFoldersFirst?.let { toggle ->
+                SwitchRow(
+                    label = stringResource(R.string.sort_folders_first),
+                    checked = prefs.foldersFirst,
+                    onToggle = toggle,
+                )
+            }
+            onToggleShowHidden?.let { toggle ->
+                SwitchRow(
+                    label = stringResource(R.string.sort_show_hidden),
+                    checked = prefs.showHidden,
+                    onToggle = toggle,
+                )
+            }
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ViewModeSelector(gridMode: Boolean, onAction: (BrowserAction) -> Unit) {
+private fun ViewModeSelector(gridMode: Boolean, onToggle: () -> Unit) {
     SingleChoiceSegmentedButtonRow(
         modifier = Modifier
             .fillMaxWidth()
@@ -105,7 +116,7 @@ private fun ViewModeSelector(gridMode: Boolean, onAction: (BrowserAction) -> Uni
         // iki ikon yan yana dar ekranda etiketi taşırıyordu.
         SegmentedButton(
             selected = !gridMode,
-            onClick = { if (gridMode) onAction(BrowserAction.ToggleViewMode) },
+            onClick = { if (gridMode) onToggle() },
             shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
             icon = {
                 Icon(
@@ -118,7 +129,7 @@ private fun ViewModeSelector(gridMode: Boolean, onAction: (BrowserAction) -> Uni
         )
         SegmentedButton(
             selected = gridMode,
-            onClick = { if (!gridMode) onAction(BrowserAction.ToggleViewMode) },
+            onClick = { if (!gridMode) onToggle() },
             shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
             icon = {
                 Icon(
@@ -134,7 +145,7 @@ private fun ViewModeSelector(gridMode: Boolean, onAction: (BrowserAction) -> Uni
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun SortBySelector(current: SortBy, onAction: (BrowserAction) -> Unit) {
+private fun SortBySelector(current: SortBy, onSelect: (SortBy) -> Unit) {
     FlowRow(
         modifier = Modifier
             .fillMaxWidth()
@@ -145,7 +156,7 @@ private fun SortBySelector(current: SortBy, onAction: (BrowserAction) -> Unit) {
             val selected = sortBy == current
             FilterChip(
                 selected = selected,
-                onClick = { onAction(BrowserAction.SetSortBy(sortBy)) },
+                onClick = { onSelect(sortBy) },
                 label = { Text(stringResource(sortBy.labelRes())) },
                 leadingIcon = if (selected) {
                     {
@@ -165,7 +176,7 @@ private fun SortBySelector(current: SortBy, onAction: (BrowserAction) -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SortOrderSelector(ascending: Boolean, onAction: (BrowserAction) -> Unit) {
+private fun SortOrderSelector(ascending: Boolean, onToggle: () -> Unit) {
     SingleChoiceSegmentedButtonRow(
         modifier = Modifier
             .fillMaxWidth()
@@ -173,7 +184,7 @@ private fun SortOrderSelector(ascending: Boolean, onAction: (BrowserAction) -> U
     ) {
         SegmentedButton(
             selected = ascending,
-            onClick = { if (!ascending) onAction(BrowserAction.ToggleSortDirection) },
+            onClick = { if (!ascending) onToggle() },
             shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
             icon = {
                 Icon(
@@ -186,7 +197,7 @@ private fun SortOrderSelector(ascending: Boolean, onAction: (BrowserAction) -> U
         )
         SegmentedButton(
             selected = !ascending,
-            onClick = { if (ascending) onAction(BrowserAction.ToggleSortDirection) },
+            onClick = { if (ascending) onToggle() },
             shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
             icon = {
                 Icon(
