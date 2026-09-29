@@ -1,5 +1,17 @@
 package dev.rk.systemapps.files.ui.category
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.remember
+import androidx.core.content.ContextCompat
+import dev.rk.systemapps.files.ui.browser.OperationProgressBar
+import dev.rk.systemapps.files.ui.component.FileSelectionTopBar
+import dev.rk.systemapps.files.ui.component.SelectionAction
+import dev.rk.systemapps.files.ui.component.SelectionDialogs
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -57,13 +69,36 @@ fun CategoryRoute(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
+    val notificationLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { /* Reddedilse de işlem sürer; yalnızca ilerleme bildirimi görünmez. */ }
+    var notificationAsked by rememberSaveable { mutableStateOf(false) }
+
     CategoryScreen(
         uiState = uiState,
-        onAction = viewModel::onAction,
+        onAction = { action ->
+            // Bildirim izni, ilk gerçek dosya işleminde isteniyor: bağlamsız sorulmuyor.
+            if (action.startsOperation() && !notificationAsked) {
+                notificationAsked = true
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                    ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.POST_NOTIFICATIONS,
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
+            viewModel.onAction(action)
+        },
         onOpenFile = { node -> FileActions.open(context, node) },
+        onShare = { nodes -> FileActions.share(context, nodes) },
         onNavigateUp = onNavigateUp,
     )
 }
+
+private fun CategoryAction.startsOperation(): Boolean =
+    this is CategoryAction.Selection && action is SelectionAction.Delete
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,10 +106,18 @@ fun CategoryScreen(
     uiState: CategoryUiState,
     onAction: (CategoryAction) -> Unit,
     onOpenFile: (FileNode) -> Unit,
+    onShare: (List<FileNode>) -> Unit,
     onNavigateUp: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var optionsVisible by rememberSaveable { mutableStateOf(false) }
+    var deleteRequested by remember { mutableStateOf(false) }
+
+    val selection = uiState.selection
+    val onSelection: (SelectionAction) -> Unit = { onAction(CategoryAction.Selection(it)) }
+
+    // Seçim modundayken geri tuşu önce seçimi kapatır (docs/files/SPEC.md §3.2).
+    BackHandler(enabled = selection.active) { onSelection(SelectionAction.Clear) }
 
     if (optionsVisible) {
         // Klasör içermeyen bir liste: "klasörler üstte" ve "gizli dosyalar"
@@ -88,31 +131,62 @@ fun CategoryScreen(
         )
     }
 
+    SelectionDialogs(
+        state = selection,
+        deleteRequested = deleteRequested,
+        onDeleteConfirm = {
+            deleteRequested = false
+            onSelection(SelectionAction.Delete)
+        },
+        onDeleteDismiss = { deleteRequested = false },
+        onAction = onSelection,
+    )
+
     Scaffold(
         modifier = modifier,
+        bottomBar = {
+            uiState.operation?.let { progress ->
+                OperationProgressBar(progress = progress, onCancel = {})
+            }
+        },
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(uiState.category.labelRes())) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateUp) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.action_up),
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { optionsVisible = true }) {
-                        Icon(
-                            imageVector = Icons.Outlined.Tune,
-                            contentDescription = stringResource(R.string.action_options),
-                        )
-                    }
-                },
-            )
+            if (selection.active) {
+                FileSelectionTopBar(
+                    selectedCount = selection.selectedIds.size,
+                    singleSelection = uiState.singleSelection,
+                    onAction = onSelection,
+                    onShare = { onShare(uiState.selectedNodes) },
+                    onDeleteRequest = { deleteRequested = true },
+                )
+            } else {
+                TopAppBar(
+                    title = { Text(stringResource(uiState.category.labelRes())) },
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateUp) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.action_up),
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { optionsVisible = true }) {
+                            Icon(
+                                imageVector = Icons.Outlined.Tune,
+                                contentDescription = stringResource(R.string.action_options),
+                            )
+                        }
+                    },
+                )
+            }
         },
     ) { innerPadding ->
         val contentModifier = Modifier.padding(innerPadding)
+        val onItemClick: (FileNode) -> Unit = { node ->
+            // Seçim modundayken tıklama seçer, açmaz.
+            if (selection.active) onSelection(SelectionAction.Toggle(node.id)) else onOpenFile(node)
+        }
+
         when {
             uiState.isLoading -> if (uiState.prefs.gridMode) {
                 SkeletonGrid(minTileSize = FileGridMinTileSize, modifier = contentModifier)
@@ -128,13 +202,17 @@ fun CategoryScreen(
 
             uiState.prefs.gridMode -> CategoryGrid(
                 items = uiState.items,
-                onOpenFile = onOpenFile,
+                selectedIds = selection.selectedIds,
+                onItemClick = onItemClick,
+                onLongClick = { node -> onSelection(SelectionAction.Toggle(node.id)) },
                 modifier = contentModifier,
             )
 
             else -> CategoryList(
                 items = uiState.items,
-                onOpenFile = onOpenFile,
+                selectedIds = selection.selectedIds,
+                onItemClick = onItemClick,
+                onLongClick = { node -> onSelection(SelectionAction.Toggle(node.id)) },
                 modifier = contentModifier,
             )
         }
@@ -144,7 +222,9 @@ fun CategoryScreen(
 @Composable
 private fun CategoryList(
     items: List<FileNode>,
-    onOpenFile: (FileNode) -> Unit,
+    selectedIds: Set<String>,
+    onItemClick: (FileNode) -> Unit,
+    onLongClick: (FileNode) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(modifier = modifier.fillMaxSize()) {
@@ -153,7 +233,9 @@ private fun CategoryList(
                 title = node.name,
                 subtitle = "${formatBytes(node.size)} · ${formatDate(node.lastModified)}",
                 leading = { FileThumbnail(node = node) },
-                onClick = { onOpenFile(node) },
+                selected = node.id in selectedIds,
+                onClick = { onItemClick(node) },
+                onLongClick = { onLongClick(node) },
             )
         }
     }
@@ -162,7 +244,9 @@ private fun CategoryList(
 @Composable
 private fun CategoryGrid(
     items: List<FileNode>,
-    onOpenFile: (FileNode) -> Unit,
+    selectedIds: Set<String>,
+    onItemClick: (FileNode) -> Unit,
+    onLongClick: (FileNode) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyVerticalGrid(
@@ -173,7 +257,12 @@ private fun CategoryGrid(
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         items(items = items, key = { it.id }) { node ->
-            FileGridTile(node = node, onClick = { onOpenFile(node) })
+            FileGridTile(
+                node = node,
+                selected = node.id in selectedIds,
+                onClick = { onItemClick(node) },
+                onLongClick = { onLongClick(node) },
+            )
         }
     }
 }
@@ -187,6 +276,7 @@ private fun CategoryScreenPreview() {
             uiState = previewState(),
             onAction = {},
             onOpenFile = {},
+            onShare = {},
             onNavigateUp = {},
         )
     }

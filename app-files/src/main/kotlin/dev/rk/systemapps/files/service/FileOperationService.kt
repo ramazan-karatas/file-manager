@@ -66,6 +66,13 @@ class FileOperationService : Service() {
                 manager.state.collectLatest { state ->
                     if (state.isBusy || state.queued > 0) {
                         notificationManager().notify(NOTIFICATION_ID, buildNotification(state))
+                    } else {
+                        // Servisi dışarıdan stopService ile öldürmek, işlem çok kısa
+                        // sürdüğünde onStartCommand hiç çalışmadan servisi sonlandırıp
+                        // ForegroundServiceDidNotStartInTimeException'a yol açıyordu.
+                        // Bu yüzden servis kendi kendini durduruyor: startForeground
+                        // çağrıldıktan sonra.
+                        stopSelf()
                     }
                 }
             }
@@ -176,8 +183,11 @@ class FileOperationService : Service() {
             )
         }
 
-        fun stop(context: Context) {
-            context.stopService(Intent(context, FileOperationService::class.java))
-        }
+        /**
+         * Servis kuyruk boşalınca kendini durduruyor (bkz. [onStartCommand]); buradan
+         * `stopService` çağrılmıyor. Kuyruk durumunu servis de gözlediği için bu
+         * çağrıya iş düşmüyor, yine de arayüz sözleşmesi korunuyor.
+         */
+        fun stop(@Suppress("UNUSED_PARAMETER") context: Context) = Unit
     }
 }

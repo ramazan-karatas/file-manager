@@ -42,6 +42,11 @@ medya oynatma (harici uygulamaya intent gönderilir), metin editörü.
     görünümü ve sıralama ölçütü/yönü. Tercih gezginle **ortaktır**; ayrı bir kategori
     tercihi tutulmaz. "Klasörler üstte" ve "gizli dosyalar" anahtarları burada
     gösterilmez — listede klasör yoktur ve MediaStore gizli dosyaları indekslemez.
+  - `CategoryScreen` ve ana ekrandaki "son değişenler" listesinde de **uzun basma
+    seçimi** var: kopyala, kes, sil, paylaş + taşma menüsünde yeniden adlandır,
+    özellikler, tümünü seç, seçimi tersine çevir. Yapıştırma çubuğu buralarda
+    gösterilmez — hedef klasör yok; kopyalanan öğeler panoda bekler, kullanıcı
+    gezginde bir klasöre gidip yapıştırır.
   - Sıralama MediaStore sorgusunu tekrarlamaz: sorgu bir kez çalışır (en yeni 500
     kayıt, `DATE_MODIFIED DESC`), sonra bu liste bellekte yeniden sıralanır. Yani
     "ada göre" sıralama, en son değişmiş 500 dosya içinde sıralar.

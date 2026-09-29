@@ -2,9 +2,13 @@ package dev.rk.systemapps.files.ui.category
 
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
+import dev.rk.systemapps.files.data.operation.FileOperationEngine
+import dev.rk.systemapps.files.data.operation.FileOperationManager
+import dev.rk.systemapps.files.data.operation.OperationServiceController
 import dev.rk.systemapps.files.domain.model.FileCategory
 import dev.rk.systemapps.files.domain.model.SortBy
 import dev.rk.systemapps.files.ui.Routes
+import dev.rk.systemapps.files.util.FakeFileRepository
 import dev.rk.systemapps.files.util.FakeFilesPreferences
 import dev.rk.systemapps.files.util.FakeMediaCatalog
 import dev.rk.systemapps.files.util.MainDispatcherRule
@@ -33,10 +37,24 @@ class CategoryViewModelTest {
 
     private val preferences = FakeFilesPreferences()
 
+    private val repository = FakeFileRepository()
+
+    private val operations = FileOperationManager(
+        serviceController = object : OperationServiceController {
+            override fun start() = Unit
+            override fun stop() = Unit
+        },
+        engine = FileOperationEngine(progressIntervalMs = 0L),
+        mediaScanner = { },
+        dispatchers = TestDispatcherProvider(),
+    )
+
     private fun viewModel() = CategoryViewModel(
         mediaCatalog = catalog,
         preferences = preferences,
         dispatchers = TestDispatcherProvider(),
+        repository = repository,
+        operations = operations,
         savedStateHandle = SavedStateHandle(
             mapOf(Routes.ARG_CATEGORY to FileCategory.DOCUMENTS.name),
         ),

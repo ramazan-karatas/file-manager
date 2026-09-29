@@ -1,5 +1,20 @@
 package dev.rk.systemapps.files.ui.home
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.core.content.ContextCompat
+import dev.rk.systemapps.files.ui.browser.OperationProgressBar
+import dev.rk.systemapps.files.ui.component.FileSelectionTopBar
+import dev.rk.systemapps.files.ui.component.SelectionAction
+import dev.rk.systemapps.files.ui.component.SelectionDialogs
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -78,6 +93,11 @@ fun HomeRoute(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
+    val notificationLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { /* Reddedilse de işlem sürer; yalnızca ilerleme bildirimi görünmez. */ }
+    var notificationAsked by rememberSaveable { mutableStateOf(false) }
+
     LifecycleResumeEffect(Unit) {
         viewModel.onAction(HomeAction.Refresh)
         onPauseOrDispose {}
@@ -85,43 +105,102 @@ fun HomeRoute(
 
     HomeScreen(
         uiState = uiState,
+        onAction = { action ->
+            // Bildirim izni, ilk gerçek dosya işleminde isteniyor: bağlamsız sorulmuyor.
+            if (action.startsOperation() && !notificationAsked) {
+                notificationAsked = true
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                    ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.POST_NOTIFICATIONS,
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
+            viewModel.onAction(action)
+        },
         onGrantAccess = { context.launchManageAllFilesSettings() },
         onOpenFolder = onOpenFolder,
         onOpenCategory = onOpenCategory,
         onOpenFile = { node -> FileActions.open(context, node) },
+        onShare = { nodes -> FileActions.share(context, nodes) },
         onOpenAbout = onOpenAbout,
     )
 }
+
+private fun HomeAction.startsOperation(): Boolean =
+    this is HomeAction.Selection && action is SelectionAction.Delete
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     uiState: HomeUiState,
+    onAction: (HomeAction) -> Unit,
     onGrantAccess: () -> Unit,
     onOpenFolder: (String) -> Unit,
     onOpenCategory: (FileCategory) -> Unit,
     onOpenFile: (FileNode) -> Unit,
+    onShare: (List<FileNode>) -> Unit,
     onOpenAbout: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var deleteRequested by remember { mutableStateOf(false) }
+
+    val selection = uiState.selection
+    val onSelection: (SelectionAction) -> Unit = { onAction(HomeAction.Selection(it)) }
+
+    BackHandler(enabled = selection.active) { onSelection(SelectionAction.Clear) }
+
+    SelectionDialogs(
+        state = selection,
+        deleteRequested = deleteRequested,
+        onDeleteConfirm = {
+            deleteRequested = false
+            onSelection(SelectionAction.Delete)
+        },
+        onDeleteDismiss = { deleteRequested = false },
+        onAction = onSelection,
+    )
+
     // Büyük başlık kaydırınca küçülüyor: ekranın üstü boşa gitmiyor, liste yer kazanıyor.
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     Scaffold(
-        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        // Seçim çubuğu sabit yükseklikte; kaydırma bağlantısı yalnızca büyük başlıkta.
+        modifier = if (selection.active) {
+            modifier
+        } else {
+            modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
+        },
+        bottomBar = {
+            uiState.operation?.let { progress ->
+                OperationProgressBar(progress = progress, onCancel = {})
+            }
+        },
         topBar = {
-            MediumTopAppBar(
-                title = { Text(stringResource(R.string.home_title)) },
-                actions = {
-                    IconButton(onClick = onOpenAbout) {
-                        Icon(
-                            imageVector = Icons.Outlined.Info,
-                            contentDescription = stringResource(R.string.about_title),
-                        )
-                    }
-                },
-                scrollBehavior = scrollBehavior,
-            )
+            if (selection.active) {
+                FileSelectionTopBar(
+                    selectedCount = selection.selectedIds.size,
+                    singleSelection = uiState.singleSelection,
+                    onAction = onSelection,
+                    onShare = { onShare(uiState.selectedNodes) },
+                    onDeleteRequest = { deleteRequested = true },
+                )
+            } else {
+                MediumTopAppBar(
+                    title = { Text(stringResource(R.string.home_title)) },
+                    actions = {
+                        IconButton(onClick = onOpenAbout) {
+                            Icon(
+                                imageVector = Icons.Outlined.Info,
+                                contentDescription = stringResource(R.string.about_title),
+                            )
+                        }
+                    },
+                    scrollBehavior = scrollBehavior,
+                )
+            }
         },
     ) { innerPadding ->
         LazyColumn(modifier = Modifier.padding(innerPadding)) {
@@ -148,7 +227,16 @@ fun HomeScreen(
                         title = node.name,
                         subtitle = "${formatBytes(node.size)} · ${formatDate(node.lastModified)}",
                         leading = { FileThumbnail(node = node) },
-                        onClick = { onOpenFile(node) },
+                        selected = node.id in selection.selectedIds,
+                        onClick = {
+                            // Seçim modundayken tıklama seçer, açmaz.
+                            if (selection.active) {
+                                onSelection(SelectionAction.Toggle(node.id))
+                            } else {
+                                onOpenFile(node)
+                            }
+                        },
+                        onLongClick = { onSelection(SelectionAction.Toggle(node.id)) },
                     )
                 }
             }
@@ -369,10 +457,12 @@ private fun HomeScreenPreview() {
                     ),
                 ),
             ),
+            onAction = {},
             onGrantAccess = {},
             onOpenFolder = {},
             onOpenCategory = {},
             onOpenFile = {},
+            onShare = {},
             onOpenAbout = {},
         )
     }
