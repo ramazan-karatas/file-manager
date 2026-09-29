@@ -1,16 +1,21 @@
 package dev.rk.systemapps.files.ui.browser
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -39,46 +44,61 @@ import dev.rk.systemapps.files.domain.model.OperationProgress
 import dev.rk.systemapps.files.domain.model.OperationState
 import java.io.File
 
-/** Pano doluyken ekranın altında duran kalıcı çubuk (docs/files/SPEC.md §3.4). */
+/**
+ * Pano doluyken FAB'ın yerini alan yapıştırma düğmesi (docs/files/SPEC.md §3.4).
+ *
+ * Eskiden ekranın altında tam genişlikte bir çubuk vardı; hem çirkin duruyordu hem
+ * de asıl eylem parmağın uzağında kalıyordu. Pano doluyken ekranın ana eylemi
+ * yapıştırmaktır, o yüzden doğrudan FAB yuvasına yerleşiyor. Panoyu temizleme
+ * aynı hapın içinde, ikincil ağırlıkta.
+ */
 @Composable
-fun PasteBar(
+fun PasteFab(
     clipboard: FileClipboard,
     onPaste: () -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.secondaryContainer,
-        tonalElevation = 3.dp,
+        modifier = modifier.height(56.dp),
+        shape = RoundedCornerShape(percent = 50),
+        color = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        shadowElevation = 6.dp,
     ) {
-        Row(
-            modifier = Modifier.padding(start = 16.dp, end = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.ContentPaste,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                modifier = Modifier.size(20.dp),
-            )
-            Text(
-                text = pluralStringResource(
-                    when (clipboard.mode) {
-                        ClipboardMode.COPY -> R.plurals.clipboard_copy_pending
-                        ClipboardMode.MOVE -> R.plurals.clipboard_move_pending
-                    },
-                    clipboard.paths.size,
-                    clipboard.paths.size,
-                ),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
                 modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 12.dp),
-            )
-            TextButton(onClick = onCancel) { Text(stringResource(R.string.action_cancel)) }
-            TextButton(onClick = onPaste) { Text(stringResource(R.string.action_paste)) }
+                    .fillMaxHeight()
+                    .clickable(onClick = onPaste)
+                    .padding(start = 20.dp, end = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.ContentPaste,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                )
+                Text(
+                    text = pluralStringResource(
+                        when (clipboard.mode) {
+                            ClipboardMode.COPY -> R.plurals.clipboard_paste_copy
+                            ClipboardMode.MOVE -> R.plurals.clipboard_paste_move
+                        },
+                        clipboard.paths.size,
+                        clipboard.paths.size,
+                    ),
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.padding(start = 10.dp),
+                )
+            }
+            IconButton(onClick = onCancel, modifier = Modifier.padding(end = 4.dp)) {
+                Icon(
+                    imageVector = Icons.Outlined.Close,
+                    contentDescription = stringResource(R.string.action_clear_clipboard),
+                    modifier = Modifier.size(20.dp),
+                )
+            }
         }
     }
 }
@@ -179,12 +199,12 @@ fun ConflictDialog(
     )
 }
 
-@Preview(name = "Yapıştırma çubuğu")
-@Preview(name = "Yapıştırma çubuğu — koyu", uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
+@Preview(name = "Yapıştırma düğmesi")
+@Preview(name = "Yapıştırma düğmesi — koyu", uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
 @Composable
-private fun PasteBarPreview() {
+private fun PasteFabPreview() {
     SystemAppsTheme {
-        PasteBar(
+        PasteFab(
             clipboard = FileClipboard(listOf("/a", "/b", "/c"), ClipboardMode.COPY),
             onPaste = {},
             onCancel = {},

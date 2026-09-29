@@ -285,26 +285,28 @@ fun BrowserScreen(
         modifier = modifier,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
-            if (!uiState.selectionActive && uiState.error == null) {
-                NewItemFab(onAction = onAction)
+            val clipboard = uiState.clipboard?.takeIf { !it.isEmpty }
+            when {
+                uiState.selectionActive -> Unit
+
+                // Pano doluyken ekranın ana eylemi yapıştırmak; yeni klasör/dosya
+                // yapıştırma bitene ya da pano temizlenene kadar geri plana düşer.
+                clipboard != null -> PasteFab(
+                    clipboard = clipboard,
+                    onPaste = { onAction(BrowserAction.Paste) },
+                    onCancel = { onAction(BrowserAction.ClearClipboard) },
+                )
+
+                uiState.error == null -> NewItemFab(onAction = onAction)
             }
         },
         bottomBar = {
-            // Scaffold yuvası kullanılıyor ki FAB bu çubukların üstünde konumlansın.
-            Column {
-                uiState.operation?.let { progress ->
-                    OperationProgressBar(
-                        progress = progress,
-                        onCancel = { onAction(BrowserAction.CancelOperation) },
-                    )
-                }
-                uiState.clipboard?.takeIf { !it.isEmpty }?.let { clipboard ->
-                    PasteBar(
-                        clipboard = clipboard,
-                        onPaste = { onAction(BrowserAction.Paste) },
-                        onCancel = { onAction(BrowserAction.ClearClipboard) },
-                    )
-                }
+            // Scaffold yuvası kullanılıyor ki FAB bu çubuğun üstünde konumlansın.
+            uiState.operation?.let { progress ->
+                OperationProgressBar(
+                    progress = progress,
+                    onCancel = { onAction(BrowserAction.CancelOperation) },
+                )
             }
         },
         topBar = {

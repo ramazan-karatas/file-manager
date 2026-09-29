@@ -95,10 +95,13 @@ medya oynatma (harici uygulamaya intent gönderilir), metin editörü.
 - Symlink döngüsüne karşı ziyaret edilen canonical path seti tutulur.
 - Filtreler (M2): sadece klasörler / tür / boyut aralığı / tarih aralığı.
 
-### 3.4 Yapıştırma çubuğu
+### 3.4 Yapıştırma düğmesi
 
-Pano doluyken ekranın altında kalıcı çubuk: "3 öğe kopyalanacak — Yapıştır / İptal".
-Pano uygulama yeniden başlasa da korunur (DataStore).
+Pano doluyken gezginde FAB'ın yerini alır: "3 öğeyi yapıştır" + panoyu temizleme (×).
+Yeni klasör/dosya FAB'ı yapıştırma bitene ya da pano temizlenene kadar görünmez —
+pano doluyken ekranın ana eylemi yapıştırmaktır. Ekranın altında tam genişlikte bir
+çubuk **kullanılmaz**: asıl eylem parmağın uzağında kalıyordu ve içerik alanını
+kırpıyordu. Pano uygulama yeniden başlasa da korunur (DataStore).
 
 ### 3.5 Depolama analizi (`StorageAnalysisScreen`, M2)
 

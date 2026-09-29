@@ -51,7 +51,6 @@
     <string name="action_copy">Copy</string>
     <string name="action_cut">Cut</string>
     <string name="action_delete">Delete</string>
-    <string name="action_paste">Paste</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_overwrite">Overwrite</string>
     <string name="action_skip">Skip</string>
@@ -67,15 +66,16 @@
     <string name="operation_done">Operation complete</string>
     <string name="operation_cancelled">Operation cancelled</string>
 
-    <plurals name="clipboard_copy_pending">
-        <item quantity="one">%1$d item to copy</item>
-        <item quantity="other">%1$d items to copy</item>
+    <plurals name="clipboard_paste_copy">
+        <item quantity="one">Paste %1$d item</item>
+        <item quantity="other">Paste %1$d items</item>
     </plurals>
 
-    <plurals name="clipboard_move_pending">
-        <item quantity="one">%1$d item to move</item>
-        <item quantity="other">%1$d items to move</item>
+    <plurals name="clipboard_paste_move">
+        <item quantity="one">Move %1$d item</item>
+        <item quantity="other">Move %1$d items</item>
     </plurals>
+    <string name="action_clear_clipboard">Clear clipboard</string>
 
     <plurals name="delete_confirm_title">
         <item quantity="one">Delete %1$d item?</item>

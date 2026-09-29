@@ -51,7 +51,6 @@
     <string name="action_copy">Kopyala</string>
     <string name="action_cut">Kes</string>
     <string name="action_delete">Sil</string>
-    <string name="action_paste">Yapıştır</string>
     <string name="action_cancel">İptal</string>
     <string name="action_overwrite">Üzerine yaz</string>
     <string name="action_skip">Atla</string>
@@ -67,13 +66,14 @@
     <string name="operation_done">İşlem tamamlandı</string>
     <string name="operation_cancelled">İşlem iptal edildi</string>
 
-    <plurals name="clipboard_copy_pending">
-        <item quantity="other">%1$d öğe kopyalanacak</item>
+    <plurals name="clipboard_paste_copy">
+        <item quantity="other">%1$d öğeyi yapıştır</item>
     </plurals>
 
-    <plurals name="clipboard_move_pending">
-        <item quantity="other">%1$d öğe taşınacak</item>
+    <plurals name="clipboard_paste_move">
+        <item quantity="other">%1$d öğeyi taşı</item>
     </plurals>
+    <string name="action_clear_clipboard">Panoyu temizle</string>
 
     <plurals name="delete_confirm_title">
         <item quantity="other">%1$d öğe silinsin mi?</item>
