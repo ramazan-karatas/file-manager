@@ -57,6 +57,7 @@ class BrowserViewModelTest {
         repository = repository,
         preferences = preferences,
         operations = operations,
+        dispatchers = TestDispatcherProvider(),
         storageLocations = object : StorageLocations {
             override fun primaryExternalStorage() = "/storage/emulated/0"
             override fun volumes() = emptyList<StorageVolumeInfo>()
@@ -171,40 +172,82 @@ class BrowserViewModelTest {
     }
 
     @Test
-    fun `siralama degisimi tercihlere yazilir ve yeniden listeler`() = runTest {
-        val repository = FakeFileRepository(nodes)
+    fun `siralama degisimi diski yeniden okumaz`() = runTest {
+        val repository = FakeFileRepository(
+            listOf(
+                fileNode("b.txt", size = 30, parent = directory),
+                fileNode("a.txt", size = 10, parent = directory),
+                fileNode("c.txt", size = 20, parent = directory),
+            ),
+        )
         val preferences = FakeFilesPreferences()
         val vm = viewModel(repository = repository, preferences = preferences)
 
         vm.uiState.test {
-            awaitItem()
+            assertEquals(listOf("a.txt", "b.txt", "c.txt"), awaitItem().items.names())
 
             vm.onAction(BrowserAction.SetSortBy(SortBy.SIZE))
-            assertEquals(SortBy.SIZE, awaitItem().prefs.sortBy)
+
+            // Sıralama arka planda yapılıyor; tercih güncellemesi listeden önce
+            // gelebildiği için beklenen sıra üzerinden bekleniyor.
+            awaitItemWhere { it.items.names() == listOf("a.txt", "c.txt", "b.txt") }
         }
 
         assertEquals(SortBy.SIZE, preferences.currentPrefs.sortBy)
-        assertEquals(SortBy.SIZE, repository.requestedOptions.last().sortBy)
+        // Asıl kazanç: tercih değişti ama klasör yalnızca açılışta okundu.
+        assertEquals(1, repository.listCount)
     }
 
     @Test
-    fun `gizli dosya ve klasor tercihleri repository secenegine gecer`() = runTest {
-        val repository = FakeFileRepository(nodes)
+    fun `gizli dosya ve klasor tercihleri siralamaya gecer`() = runTest {
+        val repository = FakeFileRepository(
+            listOf(
+                fileNode("klasor", isDirectory = true, parent = directory),
+                fileNode(".gizli.txt", parent = directory),
+                fileNode("a.txt", parent = directory),
+            ),
+        )
         val vm = viewModel(repository = repository)
 
         vm.uiState.test {
-            awaitItem()
+            assertEquals(listOf("klasor", "a.txt"), awaitItem().items.names())
 
             vm.onAction(BrowserAction.ToggleShowHidden)
-            assertTrue(awaitItem().prefs.showHidden)
+            awaitItemWhere { it.items.names() == listOf("klasor", ".gizli.txt", "a.txt") }
 
             vm.onAction(BrowserAction.ToggleFoldersFirst)
-            assertFalse(awaitItem().prefs.foldersFirst)
+            awaitItemWhere { it.items.names() == listOf(".gizli.txt", "a.txt", "klasor") }
         }
 
-        val last = repository.requestedOptions.last()
-        assertTrue(last.showHidden)
-        assertFalse(last.foldersFirst)
+        assertEquals(1, repository.listCount)
+    }
+
+    @Test
+    fun `ekran one gelince klasor degismediyse okunmaz`() = runTest {
+        val repository = FakeFileRepository(nodes).apply {
+            statResult = Outcome.Success(fileNode("Belgeler", isDirectory = true, lastModified = 5))
+        }
+        val vm = viewModel(repository = repository)
+        assertEquals(1, repository.listCount)
+
+        vm.onAction(BrowserAction.RefreshIfChanged)
+
+        assertEquals(1, repository.listCount)
+    }
+
+    @Test
+    fun `ekran one gelince klasor degistiyse yeniden okunur`() = runTest {
+        val repository = FakeFileRepository(nodes).apply {
+            statResult = Outcome.Success(fileNode("Belgeler", isDirectory = true, lastModified = 5))
+        }
+        val vm = viewModel(repository = repository)
+
+        // Klasör dışarıdan değişti: damga ilerledi.
+        repository.statResult =
+            Outcome.Success(fileNode("Belgeler", isDirectory = true, lastModified = 9))
+        vm.onAction(BrowserAction.RefreshIfChanged)
+
+        assertEquals(2, repository.listCount)
     }
 
     @Test
@@ -219,5 +262,14 @@ class BrowserViewModelTest {
         }
 
         assertTrue(preferences.currentPrefs.gridMode)
+    }
+
+    private suspend fun app.cash.turbine.ReceiveTurbine<BrowserUiState>.awaitItemWhere(
+        predicate: (BrowserUiState) -> Boolean,
+    ): BrowserUiState {
+        while (true) {
+            val state = awaitItem()
+            if (predicate(state)) return state
+        }
     }
 }

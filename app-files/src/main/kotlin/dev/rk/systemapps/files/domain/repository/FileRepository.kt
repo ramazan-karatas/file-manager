@@ -4,7 +4,6 @@ import dev.rk.systemapps.core.common.result.Outcome
 import dev.rk.systemapps.files.domain.model.DirectoryStats
 import dev.rk.systemapps.files.domain.model.FileDetails
 import dev.rk.systemapps.files.domain.model.FileNode
-import dev.rk.systemapps.files.domain.model.ListingOptions
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -13,12 +12,16 @@ import kotlinx.coroutines.flow.Flow
 interface FileRepository {
 
     /**
-     * Klasör içeriğini [options] uyarınca süzüp sıralayarak yayar.
+     * Klasör içeriğini **diskteki hâliyle** yayar; süzme ve sıralama yapmaz.
+     *
+     * Sıralama sunum katmanına taşındı: tercih değişince klasörü yeniden okumak
+     * gerekmiyor. `readdir` + dosya başına `stat`, sıralamanın kat kat üstünde
+     * (10.000 dosyada ~2,6 sn'ye karşı ~0,6 sn).
      *
      * Akış olmasının sebebi, ileride klasör izleme (FileObserver) eklendiğinde
      * arayüzün değişmek zorunda kalmaması; şu an tek değer yayıp tamamlanır.
      */
-    fun list(directoryId: String, options: ListingOptions): Flow<Outcome<List<FileNode>>>
+    fun list(directoryId: String): Flow<Outcome<List<FileNode>>>
 
     suspend fun stat(id: String): Outcome<FileNode>
 

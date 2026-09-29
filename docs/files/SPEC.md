@@ -58,6 +58,15 @@ medya oynatma (harici uygulamaya intent gönderilir), metin editörü.
 - Sıralama: ad / boyut / değiştirilme tarihi / tür × artan-azalan.
   Klasörler varsayılan olarak üstte (ayardan kapatılabilir).
 - Gizli dosyaları göster/gizle anahtarı.
+- **Süzme ve sıralama bellekte yapılır, disk yeniden okunmaz.** Repository klasörü
+  ham hâliyle döndürür; sıralama tercihi ya da liste↔ızgara değişince yalnızca
+  mevcut liste yeniden sıralanır. Ölçüm (emülatör, 4.000 dosya): klasörü okumak
+  733 ms, sıralamak 60 ms. Eskiden her tercih değişimi klasörü baştan okutuyordu.
+- **Tazelik:** liste bellekte tutulduğu için ekran öne geldiğinde klasörün kendi
+  değişiklik damgası (`lastModified`) kontrol edilir; değişmişse yeniden okunur,
+  değişmemişse hiç okunmaz (n dosya yerine tek `stat`). Kullanıcı ayrıca **aşağı
+  çekerek** koşulsuz yenileyebilir. Yenilemede eski liste ekranda kalır, tam ekran
+  spinner yerine yenileme göstergesi döner.
 - Görünüm ve sıralama tercihleri **tek bir seçenekler sayfasında** toplanır
   (üst çubuktaki tek düğme → alttan açılan sayfa): görünüm ve sıra segment
   düğmeleriyle, ölçüt çiplerle, iki anahtar switch'le. Üst çubukta ayrı sıralama

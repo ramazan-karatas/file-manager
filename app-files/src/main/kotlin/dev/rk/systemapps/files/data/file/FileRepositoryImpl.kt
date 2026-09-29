@@ -6,7 +6,6 @@ import dev.rk.systemapps.core.common.result.outcomeOf
 import dev.rk.systemapps.files.domain.model.DirectoryStats
 import dev.rk.systemapps.files.domain.model.FileDetails
 import dev.rk.systemapps.files.domain.model.FileNode
-import dev.rk.systemapps.files.domain.model.ListingOptions
 import dev.rk.systemapps.files.domain.repository.FileRepository
 import java.io.FileNotFoundException
 import java.util.Locale
@@ -20,11 +19,8 @@ class FileRepositoryImpl(
     private val dispatchers: DispatcherProvider,
 ) : FileRepository {
 
-    override fun list(
-        directoryId: String,
-        options: ListingOptions,
-    ): Flow<Outcome<List<FileNode>>> = flow {
-        emit(outcomeOf { FileNodeSorter.apply(dataSource.listDirectory(directoryId), options) })
+    override fun list(directoryId: String): Flow<Outcome<List<FileNode>>> = flow {
+        emit(outcomeOf { dataSource.listDirectory(directoryId) })
     }.flowOn(dispatchers.io)
 
     override suspend fun stat(id: String): Outcome<FileNode> = withContext(dispatchers.io) {

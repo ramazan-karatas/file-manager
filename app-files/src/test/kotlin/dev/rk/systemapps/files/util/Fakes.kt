@@ -9,7 +9,6 @@ import dev.rk.systemapps.files.domain.model.FileClipboard
 import dev.rk.systemapps.files.data.media.MediaCatalog
 import dev.rk.systemapps.files.domain.model.FileCategory
 import dev.rk.systemapps.files.domain.model.FileNode
-import dev.rk.systemapps.files.domain.model.ListingOptions
 import dev.rk.systemapps.files.domain.repository.FileRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,18 +18,19 @@ class FakeFileRepository(nodes: List<FileNode> = emptyList()) : FileRepository {
 
     var result: Outcome<List<FileNode>> = Outcome.Success(nodes)
 
-    /** Her `list` çağrısında kullanılan seçenekler — tercih değişimini doğrulamak için. */
-    val requestedOptions = mutableListOf<ListingOptions>()
+    /** Diskin kaç kez okunduğu; tercih değişiminin okuma tetiklemediğini doğrulamak için. */
+    var listCount: Int = 0
+        private set
 
-    override fun list(
-        directoryId: String,
-        options: ListingOptions,
-    ): Flow<Outcome<List<FileNode>>> = flow {
-        requestedOptions += options
+    override fun list(directoryId: String): Flow<Outcome<List<FileNode>>> = flow {
+        listCount++
         emit(result)
     }
 
-    override suspend fun stat(id: String): Outcome<FileNode> = Outcome.Failure()
+    /** Klasörün değişiklik damgası [BrowserViewModel] tarafından buradan okunur. */
+    var statResult: Outcome<FileNode> = Outcome.Failure()
+
+    override suspend fun stat(id: String): Outcome<FileNode> = statResult
 
     override suspend fun exists(id: String): Boolean = false
 

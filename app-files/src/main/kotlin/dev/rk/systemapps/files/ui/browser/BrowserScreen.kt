@@ -8,6 +8,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -44,6 +46,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -67,6 +70,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.rk.systemapps.core.common.format.formatBytes
 import dev.rk.systemapps.core.common.format.formatDate
@@ -96,6 +100,13 @@ fun BrowserRoute(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+
+    // Liste bellekte tutuluyor; ekran öne geldiğinde klasör dışarıdan değişmiş mi
+    // diye bakılır. Damga aynıysa disk hiç okunmaz.
+    LifecycleResumeEffect(Unit) {
+        viewModel.onAction(BrowserAction.RefreshIfChanged)
+        onPauseOrDispose {}
+    }
 
     val notificationLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
@@ -372,7 +383,11 @@ fun BrowserScreen(
             // İçerik kalan alanı kaplar; ilerleme ve yapıştırma çubukları altta sabit kalır.
             // Aksi hâlde fillMaxSize kullanan boş/yükleniyor durumları çubukları
             // ekran dışına itiyordu.
-            Box(modifier = Modifier.weight(1f)) {
+            PullToRefreshBox(
+                isRefreshing = uiState.isRefreshing,
+                onRefresh = { onAction(BrowserAction.Refresh) },
+                modifier = Modifier.weight(1f),
+            ) {
                 when {
                     uiState.isLoading -> LoadingState()
 
@@ -384,10 +399,13 @@ fun BrowserScreen(
                         onAction = { onAction(BrowserAction.Reload) },
                     )
 
+                    // Boş klasörde de aşağı çekilebilsin diye kaydırılabilir kılınıyor;
+                    // kaydırma olayı olmadan yenileme hareketi tetiklenmiyor.
                     uiState.isEmpty -> EmptyState(
                         icon = Icons.Outlined.FolderOff,
                         title = stringResource(R.string.browser_empty_title),
                         description = stringResource(R.string.browser_empty_description),
+                        modifier = Modifier.verticalScroll(rememberScrollState()),
                     )
 
                     uiState.prefs.gridMode -> FileGrid(

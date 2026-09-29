@@ -3,8 +3,6 @@ package dev.rk.systemapps.files.data.file
 import app.cash.turbine.test
 import dev.rk.systemapps.core.common.result.Outcome
 import dev.rk.systemapps.files.domain.MimeTypeResolver
-import dev.rk.systemapps.files.domain.model.ListingOptions
-import dev.rk.systemapps.files.domain.model.SortBy
 import dev.rk.systemapps.files.util.TestDispatcherProvider
 import dev.rk.systemapps.files.util.names
 import java.io.File
@@ -27,32 +25,20 @@ class FileRepositoryImplTest {
     )
 
     @Test
-    fun `list suzulmus ve siralanmis sonuc yayar`() = runTest {
+    fun `list gizli dosyalar dahil ham icerigi yayar`() = runTest {
         tempFolder.newFile("b.txt")
         tempFolder.newFile("a.txt")
         tempFolder.newFile(".gizli")
         tempFolder.newFolder("klasor")
 
-        repository.list(tempFolder.root.absolutePath, ListingOptions()).test {
+        // Süzme ve sıralama sunum katmanında; repository diskteki hâli döndürür.
+        repository.list(tempFolder.root.absolutePath).test {
             val outcome = awaitItem()
             assertTrue(outcome is Outcome.Success)
             assertEquals(
-                listOf("klasor", "a.txt", "b.txt"),
-                (outcome as Outcome.Success).value.names(),
+                setOf("klasor", "a.txt", "b.txt", ".gizli"),
+                (outcome as Outcome.Success).value.names().toSet(),
             )
-            awaitComplete()
-        }
-    }
-
-    @Test
-    fun `list secenekleri sonuca yansir`() = runTest {
-        tempFolder.newFile("kucuk.bin").writeBytes(ByteArray(1))
-        tempFolder.newFile("buyuk.bin").writeBytes(ByteArray(100))
-
-        val options = ListingOptions(sortBy = SortBy.SIZE, ascending = false)
-        repository.list(tempFolder.root.absolutePath, options).test {
-            val outcome = awaitItem() as Outcome.Success
-            assertEquals(listOf("buyuk.bin", "kucuk.bin"), outcome.value.names())
             awaitComplete()
         }
     }
@@ -61,7 +47,7 @@ class FileRepositoryImplTest {
     fun `olmayan klasor Failure olarak yayilir exception sizmaz`() = runTest {
         val missing = File(tempFolder.root, "yok").absolutePath
 
-        repository.list(missing, ListingOptions()).test {
+        repository.list(missing).test {
             assertTrue(awaitItem() is Outcome.Failure)
             awaitComplete()
         }

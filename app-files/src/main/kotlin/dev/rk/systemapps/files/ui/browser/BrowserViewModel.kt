@@ -4,9 +4,11 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.rk.systemapps.core.common.coroutines.DispatcherProvider
 import dev.rk.systemapps.core.common.result.Outcome
 import dev.rk.systemapps.core.storage.volume.StorageLocations
 import dev.rk.systemapps.files.data.operation.FileOperationManager
+import dev.rk.systemapps.files.data.file.FileNodeSorter
 import dev.rk.systemapps.files.data.preferences.FilesPreferences
 import dev.rk.systemapps.files.domain.model.BrowserPrefs
 import dev.rk.systemapps.files.domain.model.ClipboardMode
@@ -31,8 +33,12 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -63,6 +69,8 @@ data class BrowserUiState(
     val crumbs: List<Crumb> = emptyList(),
     val items: List<FileNode> = emptyList(),
     val isLoading: Boolean = true,
+    /** Liste ekranda dururken arkada yeniden okunuyor; tam ekran spinner gösterilmez. */
+    val isRefreshing: Boolean = false,
     val error: BrowserError? = null,
     val prefs: BrowserPrefs = BrowserPrefs(),
     val selectedIds: Set<String> = emptySet(),
@@ -91,6 +99,15 @@ data class BrowserUiState(
 
 sealed interface BrowserAction {
     data object Reload : BrowserAction
+
+    /** Aşağı çekerek yenileme: kullanıcı açıkça istedi, koşulsuz okunur. */
+    data object Refresh : BrowserAction
+
+    /**
+     * Ekran öne geldiğinde çağrılır. Klasörün kendi değişiklik damgası aynıysa
+     * hiç okumaz; n dosya yerine tek `stat` maliyeti.
+     */
+    data object RefreshIfChanged : BrowserAction
 
     // F-1.4 — tercihler
     data class SetSortBy(val sortBy: SortBy) : BrowserAction
@@ -136,6 +153,7 @@ class BrowserViewModel @Inject constructor(
     private val repository: FileRepository,
     private val preferences: FilesPreferences,
     private val operations: FileOperationManager,
+    private val dispatchers: DispatcherProvider,
     storageLocations: StorageLocations,
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
@@ -157,6 +175,9 @@ class BrowserViewModel @Inject constructor(
      */
     private var latestPrefs = BrowserPrefs()
 
+    /** Klasörün son okunduğu andaki değişiklik damgası; [refreshIfChanged] buna bakar. */
+    private var directoryStamp: Long? = null
+
     /**
      * Seçim [SavedStateHandle] üzerinde tutulur: ekran döndürmede ve proses ölümünde korunur
      * (docs/files/PLAN.md F-1.5).
@@ -172,20 +193,42 @@ class BrowserViewModel @Inject constructor(
         localState,
     ) { queue, conflict, local -> AuxState(queue.current, conflict, local) }
 
-    val uiState: StateFlow<BrowserUiState> = combine(
+    /**
+     * Süzme + sıralama burada yapılıyor, repository'de değil: tercih değişince
+     * klasör yeniden okunmasın diye. Ağır olduğu için [DispatcherProvider.default]
+     * üzerinde, `mapLatest` ile — hızlı ardışık değişikliklerde öncekini iptal eder.
+     */
+    private val content: Flow<Content> = combine(
         listing,
+        // Yalnızca sıralamayı etkileyen alanlar: liste↔ızgara geçişi yeniden
+        // sıralama tetiklemesin diye gridMode buraya girmiyor.
+        preferences.browserPrefs.map { it.listingOptions }.distinctUntilChanged(),
+    ) { listingState, options ->
+        listingState to options
+    }.mapLatest { (listingState, options) ->
+        Content(
+            items = FileNodeSorter.apply(listingState.items, options),
+            isLoading = listingState.isLoading,
+            isRefreshing = listingState.isRefreshing,
+            error = listingState.error,
+        )
+    }.flowOn(dispatchers.default)
+
+    val uiState: StateFlow<BrowserUiState> = combine(
+        content,
         preferences.browserPrefs,
         selectedIds,
         preferences.clipboard,
         auxState,
-    ) { listingState, prefs, selected, clipboard, aux ->
-        val presentIds = listingState.items.mapTo(HashSet(listingState.items.size)) { it.id }
+    ) { contentState, prefs, selected, clipboard, aux ->
+        val presentIds = contentState.items.mapTo(HashSet(contentState.items.size)) { it.id }
         BrowserUiState(
             path = path,
             crumbs = crumbs,
-            items = listingState.items,
-            isLoading = listingState.isLoading,
-            error = listingState.error,
+            items = contentState.items,
+            isLoading = contentState.isLoading,
+            isRefreshing = contentState.isRefreshing,
+            error = contentState.error,
             prefs = prefs,
             // Silinen/kaybolan öğeler seçili kalmamalı.
             selectedIds = selected.filterTo(mutableSetOf()) { it in presentIds },
@@ -206,7 +249,7 @@ class BrowserViewModel @Inject constructor(
         viewModelScope.launch {
             // Bir işlem bitince klasör içeriği değişmiş olabilir.
             operations.completions.collect { outcome ->
-                loadWith(latestPrefs)
+                load()
                 _events.emit(
                     BrowserEvent.OperationFinished(outcome.state, outcome.failures.size),
                 )
@@ -214,17 +257,18 @@ class BrowserViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            // Tercih değişince listeleme baştan yapılır; collectLatest öncekini iptal eder.
-            preferences.browserPrefs.collectLatest { prefs ->
-                latestPrefs = prefs
-                loadWith(prefs)
-            }
+            // Tercihler artık yalnızca sıralamayı etkiliyor; disk okunmuyor.
+            preferences.browserPrefs.collect { latestPrefs = it }
         }
+
+        viewModelScope.launch { load() }
     }
 
     fun onAction(action: BrowserAction) {
         when (action) {
-            BrowserAction.Reload -> viewModelScope.launch { loadWith(latestPrefs) }
+            BrowserAction.Reload -> viewModelScope.launch { load() }
+            BrowserAction.Refresh -> viewModelScope.launch { load(asRefresh = true) }
+            BrowserAction.RefreshIfChanged -> viewModelScope.launch { refreshIfChanged() }
 
             is BrowserAction.SetSortBy -> updatePrefs { it.copy(sortBy = action.sortBy) }
             BrowserAction.ToggleSortDirection -> updatePrefs { it.copy(ascending = !it.ascending) }
@@ -326,7 +370,7 @@ class BrowserViewModel @Inject constructor(
                 is Outcome.Success -> {
                     localState.value = LocalState()
                     setSelection { emptyList() }
-                    loadWith(latestPrefs)
+                    load()
                 }
 
                 is Outcome.Failure -> localState.update {
@@ -368,17 +412,35 @@ class BrowserViewModel @Inject constructor(
         }
     }
 
-    private suspend fun loadWith(prefs: BrowserPrefs) {
-        listing.update { it.copy(isLoading = true, error = null) }
-        repository.list(path, prefs.listingOptions).collect { outcome ->
-            listing.update {
-                when (outcome) {
-                    is Outcome.Success -> Listing(items = outcome.value, isLoading = false)
-                    is Outcome.Failure -> Listing(isLoading = false, error = outcome.toBrowserError())
-                }
+    /**
+     * [asRefresh] true ise mevcut liste ekranda kalır ve yalnızca yenileme göstergesi
+     * döner; false ise tam ekran spinner gösterilir (ilk yükleme ve hata sonrası).
+     */
+    private suspend fun load(asRefresh: Boolean = false) {
+        listing.update {
+            if (asRefresh) it.copy(isRefreshing = true) else it.copy(isLoading = true, error = null)
+        }
+        directoryStamp = readDirectoryStamp()
+        repository.list(path).collect { outcome ->
+            listing.value = when (outcome) {
+                is Outcome.Success -> Listing(items = outcome.value, isLoading = false)
+                is Outcome.Failure -> Listing(isLoading = false, error = outcome.toBrowserError())
             }
         }
     }
+
+    /**
+     * Ekran öne geldiğinde çağrılır. Klasörün değişiklik damgası aynıysa hiç okumaz:
+     * tek `stat`, n dosyalık `readdir` + `stat` yerine.
+     */
+    private suspend fun refreshIfChanged() {
+        // İlk yükleme henüz bitmediyse zaten güncel veri geliyor.
+        val previous = directoryStamp ?: return
+        if (readDirectoryStamp() != previous) load(asRefresh = true)
+    }
+
+    private suspend fun readDirectoryStamp(): Long? =
+        (repository.stat(path) as? Outcome.Success)?.value?.lastModified
 
     private fun updatePrefs(transform: (BrowserPrefs) -> BrowserPrefs) {
         viewModelScope.launch {
@@ -408,10 +470,20 @@ class BrowserViewModel @Inject constructor(
         val local: LocalState,
     )
 
+    /** Diskten geldiği hâliyle; sıralama [uiState] boru hattında yapılıyor. */
     private data class Listing(
         val items: List<FileNode> = emptyList(),
         val isLoading: Boolean = true,
+        val isRefreshing: Boolean = false,
         val error: BrowserError? = null,
+    )
+
+    /** Sıralanmış içerik; ağır kısım arka planda üretilir. */
+    private data class Content(
+        val items: List<FileNode>,
+        val isLoading: Boolean,
+        val isRefreshing: Boolean,
+        val error: BrowserError?,
     )
 
     private companion object {
