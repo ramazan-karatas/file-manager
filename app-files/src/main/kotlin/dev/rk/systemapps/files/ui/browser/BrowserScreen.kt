@@ -77,7 +77,8 @@ import dev.rk.systemapps.core.common.format.formatDate
 import dev.rk.systemapps.core.design.component.AppListItem
 import dev.rk.systemapps.core.design.component.ConfirmDialog
 import dev.rk.systemapps.core.design.component.EmptyState
-import dev.rk.systemapps.core.design.component.LoadingState
+import dev.rk.systemapps.core.design.component.SkeletonGrid
+import dev.rk.systemapps.core.design.component.SkeletonList
 import dev.rk.systemapps.core.design.component.SelectionTopBar
 import dev.rk.systemapps.core.design.theme.SystemAppsTheme
 import dev.rk.systemapps.files.R
@@ -389,7 +390,13 @@ fun BrowserScreen(
                 modifier = Modifier.weight(1f),
             ) {
                 when {
-                    uiState.isLoading -> LoadingState()
+                    // Spinner yerine gelecek satırların yer tutucusu: düzen
+                    // önden görünüyor ve liste gelince zıplama olmuyor.
+                    uiState.isLoading -> if (uiState.prefs.gridMode) {
+                        SkeletonGrid(minTileSize = FileGridMinTileSize)
+                    } else {
+                        SkeletonList()
+                    }
 
                     uiState.error != null -> EmptyState(
                         icon = Icons.Outlined.FolderOff,

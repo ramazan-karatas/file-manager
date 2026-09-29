@@ -35,7 +35,8 @@ import dev.rk.systemapps.core.common.format.formatBytes
 import dev.rk.systemapps.core.common.format.formatDate
 import dev.rk.systemapps.core.design.component.AppListItem
 import dev.rk.systemapps.core.design.component.EmptyState
-import dev.rk.systemapps.core.design.component.LoadingState
+import dev.rk.systemapps.core.design.component.SkeletonGrid
+import dev.rk.systemapps.core.design.component.SkeletonList
 import dev.rk.systemapps.core.design.theme.SystemAppsTheme
 import dev.rk.systemapps.files.R
 import dev.rk.systemapps.files.domain.model.FileCategory
@@ -113,7 +114,11 @@ fun CategoryScreen(
     ) { innerPadding ->
         val contentModifier = Modifier.padding(innerPadding)
         when {
-            uiState.isLoading -> LoadingState(modifier = contentModifier)
+            uiState.isLoading -> if (uiState.prefs.gridMode) {
+                SkeletonGrid(minTileSize = FileGridMinTileSize, modifier = contentModifier)
+            } else {
+                SkeletonList(modifier = contentModifier)
+            }
 
             uiState.isEmpty -> EmptyState(
                 icon = Icons.Outlined.FolderOff,

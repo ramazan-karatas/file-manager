@@ -62,6 +62,11 @@ medya oynatma (harici uygulamaya intent gönderilir), metin editörü.
   ham hâliyle döndürür; sıralama tercihi ya da liste↔ızgara değişince yalnızca
   mevcut liste yeniden sıralanır. Ölçüm (emülatör, 4.000 dosya): klasörü okumak
   733 ms, sıralamak 60 ms. Eskiden her tercih değişimi klasörü baştan okutuyordu.
+- **Yükleme göstergesi:** spinner değil, gelecek satırların/karelerin yerine geçen
+  gri kutular (skeleton screen) + üzerinden geçen parlama. Ölçüler gerçek satırla
+  birebir ki liste gelince düzen oynamasın. Cihazda animasyonlar kapalıysa
+  (`ANIMATOR_DURATION_SCALE = 0`) parlama kurulmaz, düz renk gösterilir; yer
+  tutucular ekran okuyucuya okunmaz.
 - **Tazelik:** liste bellekte tutulduğu için ekran öne geldiğinde klasörün kendi
   değişiklik damgası (`lastModified`) kontrol edilir; değişmişse yeniden okunur,
   değişmemişse hiç okunmaz (n dosya yerine tek `stat`). Kullanıcı ayrıca **aşağı
