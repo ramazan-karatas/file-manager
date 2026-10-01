@@ -60,7 +60,8 @@ fun AboutRoute(onNavigateUp: () -> Unit) {
             modifier = Modifier
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 16.dp),
         ) {
             Text(
                 text = stringResource(R.string.app_name),
@@ -95,13 +96,6 @@ fun AboutRoute(onNavigateUp: () -> Unit) {
             AboutClaim(
                 Icons.Outlined.Notifications,
                 stringResource(R.string.about_permission_notifications),
-            )
-
-            Text(
-                text = stringResource(R.string.about_permissions_note),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(vertical = 16.dp),
             )
         }
     }

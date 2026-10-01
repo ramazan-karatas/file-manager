@@ -141,5 +141,4 @@
     <string name="about_permission_media">Medya okuma — sınırlı modda görsel, video ve ses dosyalarını gösterebilmek için</string>
     <string name="about_permission_service">Ön plan servisi — kopyalama arka planda kesilmesin diye</string>
     <string name="about_permission_notifications">Bildirim — süren dosya işleminin ilerlemesini göstermek için</string>
-    <string name="about_permissions_note">Bu liste uygulamanın manifest dosyasıyla birebir aynıdır; derleme sırasında INTERNET izninin bulunmadığı otomatik olarak doğrulanır.</string>
 </resources>

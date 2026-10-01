@@ -146,5 +146,4 @@
     <string name="about_permission_media">Media read — to show images, video and audio in limited mode</string>
     <string name="about_permission_service">Foreground service — so copying is not interrupted in the background</string>
     <string name="about_permission_notifications">Notifications — to show progress of a running file operation</string>
-    <string name="about_permissions_note">This list matches the app manifest exactly; the build verifies automatically that the INTERNET permission is absent.</string>
 </resources>
