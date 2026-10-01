@@ -37,6 +37,7 @@ import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.MusicNote
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.SdCard
 import androidx.compose.material.icons.outlined.Smartphone
 import androidx.compose.material.icons.outlined.Videocam
@@ -87,6 +88,7 @@ import dev.rk.systemapps.files.ui.component.AccessWarningBanner
 fun HomeRoute(
     onOpenFolder: (String) -> Unit,
     onOpenCategory: (FileCategory) -> Unit,
+    onOpenSearch: (String) -> Unit,
     onOpenAbout: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
@@ -125,6 +127,8 @@ fun HomeRoute(
         onOpenCategory = onOpenCategory,
         onOpenFile = { node -> FileActions.open(context, node) },
         onShare = { nodes -> FileActions.share(context, nodes) },
+        // Ana ekranda bir klasör bağlamı yok; arama birincil depolamanın kökünden başlar.
+        onSearch = { onOpenSearch(uiState.storageRoot) },
         onOpenAbout = onOpenAbout,
     )
 }
@@ -142,6 +146,7 @@ fun HomeScreen(
     onOpenCategory: (FileCategory) -> Unit,
     onOpenFile: (FileNode) -> Unit,
     onShare: (List<FileNode>) -> Unit,
+    onSearch: () -> Unit,
     onOpenAbout: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -191,6 +196,16 @@ fun HomeScreen(
                 MediumTopAppBar(
                     title = { Text(stringResource(R.string.home_title)) },
                     actions = {
+                        IconButton(
+                            onClick = onSearch,
+                            // Kök yolu okunmadan arama ekranı boş bir yolla açılırdı.
+                            enabled = uiState.storageRoot.isNotEmpty(),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Search,
+                                contentDescription = stringResource(R.string.action_search),
+                            )
+                        }
                         IconButton(onClick = onOpenAbout) {
                             Icon(
                                 imageVector = Icons.Outlined.Info,
@@ -463,6 +478,7 @@ private fun HomeScreenPreview() {
             onOpenCategory = {},
             onOpenFile = {},
             onShare = {},
+            onSearch = {},
             onOpenAbout = {},
         )
     }

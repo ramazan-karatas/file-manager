@@ -63,6 +63,7 @@ private fun FilesNavHost(startWithOnboarding: Boolean) {
                 onOpenCategory = { category ->
                     navController.navigate(Routes.category(category.name))
                 },
+                onOpenSearch = { path -> navController.navigate(Routes.search(path)) },
                 onOpenAbout = { navController.navigate(Routes.ABOUT) },
             )
         }

@@ -90,6 +90,8 @@ medya oynatma (harici uygulamaya intent gönderilir), metin editörü.
 ### 3.3 Arama (`SearchScreen`)
 
 - Bulunulan klasörden itibaren özyinelemeli. 250 ms debounce.
+- Ana ekranın üst çubuğundan da açılır; orada klasör bağlamı olmadığı için
+  arama birincil depolamanın kökünden başlar.
 - Sonuçlar akış hâlinde gelir; tarama bitmeden liste dolmaya başlar.
 - Yeni sorgu gelince önceki tarama iptal edilir (coroutine cancel).
 - Symlink döngüsüne karşı ziyaret edilen canonical path seti tutulur.
