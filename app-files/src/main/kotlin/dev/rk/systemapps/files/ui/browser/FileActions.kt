@@ -4,8 +4,10 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.provider.Settings
 import androidx.core.app.ShareCompat
 import androidx.core.content.FileProvider
+import androidx.core.net.toUri
 import dev.rk.systemapps.files.R
 import dev.rk.systemapps.files.domain.model.FileNode
 import java.io.File
@@ -18,6 +20,8 @@ import java.io.File
  */
 object FileActions {
 
+    private const val APK_MIME_TYPE = "application/vnd.android.package-archive"
+
     private fun authority(context: Context) = "${context.packageName}.fileprovider"
 
     fun contentUri(context: Context, node: FileNode): Uri =
@@ -25,11 +29,30 @@ object FileActions {
 
     /** @return açabilecek bir uygulama bulunduysa true. */
     fun open(context: Context, node: FileNode): Boolean {
+        if (node.mimeType == APK_MIME_TYPE && !context.canInstallPackages()) {
+            return context.requestInstallPermission()
+        }
         val intent = Intent(Intent.ACTION_VIEW).apply {
             setDataAndType(contentUri(context, node), node.mimeType ?: "*/*")
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         return context.startActivitySafely(intent)
+    }
+
+    private fun Context.canInstallPackages(): Boolean = packageManager.canRequestPackageInstalls()
+
+    /**
+     * REQUEST_INSTALL_PACKAGES manifest'te olsa bile kurulum ekranı, kullanıcı bu
+     * uygulamaya "bilinmeyen uygulamaları yükle" iznini vermeden açılmaz; izin
+     * yokken intent sessizce düşer. Bu yüzden kullanıcı doğrudan ilgili ayar
+     * ekranına gönderiliyor.
+     */
+    private fun Context.requestInstallPermission(): Boolean {
+        val intent = Intent(
+            Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+            "package:$packageName".toUri(),
+        )
+        return startActivitySafely(intent)
     }
 
     /**

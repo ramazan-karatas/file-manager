@@ -115,6 +115,14 @@ kırpıyordu. Pano uygulama yeniden başlasa da korunur (DataStore).
 Ad, tam yol, MIME türü, boyut (klasörse hesaplanır, spinner gösterilir), öğe sayısı,
 değiştirilme tarihi, izinler (rwx); görsel/video ise çözünürlük ve süre.
 
+### 3.6.1 APK dosyasına dokunma
+
+APK'ye dokunulduğunda sistemin paket yükleyicisi açılır. Bunun için manifest'te
+`REQUEST_INSTALL_PACKAGES` izni bulunur; ancak bu izin tek başına yetmez, kullanıcının
+uygulamaya "bilinmeyen uygulamaları yükle" yetkisini de vermesi gerekir. Yetki yokken
+`ACTION_VIEW` sessizce düşeceği için uygulama bunu önceden kontrol eder ve kullanıcıyı
+`ACTION_MANAGE_UNKNOWN_APP_SOURCES` ayar ekranına yönlendirir.
+
 ### 3.7 Onboarding / izin ekranı
 
 İlk açılışta "Tüm dosyalara erişim" izninin neden gerektiğini anlatan tek ekran + izin butonu.

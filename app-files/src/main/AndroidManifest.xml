@@ -31,6 +31,13 @@
     <!-- API 34+: kullanıcı "yalnızca seçilen öğeler" derse verilen izin. -->
     <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
 
+    <!--
+      APK dosyasına dokunulduğunda sistem kurulum ekranını açabilmek için. Bu izin
+      tek başına yetmez; kullanıcının ayrıca "bilinmeyen uygulamaları yükle" iznini
+      bu uygulamaya vermesi gerekir (bkz. FileActions.open).
+    -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
     <!-- Dosya işlemleri uygulama arka plandayken de sürsün diye. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
