@@ -1,18 +1,41 @@
-# system_apps
+# Dosyalar
 
-Xiaomi HyperOS'un reklamlı sistem uygulamalarının reklamsız, ağa çıkmayan,
-açık kaynak alternatifleri. Kotlin + Jetpack Compose monorepo.
+Reklamsız, ağa çıkmayan, açık kaynak Android dosya yöneticisi.
+Kotlin + Jetpack Compose (Material 3).
 
-| Uygulama | Modül | Ne yapıyor |
-|---|---|---|
-| Dosyalar | `app-files` | Dosya yöneticisi, arşiv, depolama analizi |
-| Müzik | `app-music` | Yerel müzik çalar (Media3), klasör bazlı kütüphane |
+**İndir:** [v1.0.0 APK](https://github.com/ramazan-karatas/file-manager/releases/latest)
+· Android 8.0 ve üzeri
 
-- Mimari: [docs/00-architecture.md](docs/00-architecture.md)
-- Agent kılavuzu / kodlama kuralları: [CLAUDE.md](CLAUDE.md)
-- Spec + planlar: `docs/files/`, `docs/music/`
+## Neler var
 
-**Bu uygulamalarda yok:** reklam, analytics, crash reporting, telemetri, internet izni.
+- Dosya gezgini: liste/ızgara görünümü, sıralama ölçütleri, gizli dosyalar
+- Kopyala / taşı / sil / yeniden adlandır — arka planda, ilerleme bildirimli
+- Özyinelemeli arama; sonuçlar tarama bitmeden akmaya başlar
+- Kategoriler: görseller, video, ses, belgeler, APK, arşivler
+- Uzun basarak çoklu seçim, paylaşma, özellikler penceresi
+
+**Bu uygulamada yok:** reklam, analytics, crash reporting, telemetri.
+**İnternet izni bile yok** — derleme sırasında birleşmiş manifest denetlenerek
+otomatik doğrulanıyor.
+
+### Bilinen sınırlar
+
+- SD karta yazma henüz desteklenmiyor (dahili depolama sorunsuz).
+
+## Derleme
+
+```bash
+./gradlew :app-files:assembleDebug     # APK
+./gradlew testDebugUnitTest            # unit testler
+```
+
+JDK 21 gerekir; Gradle daemon'ı kendi ayarlıyor.
+
+## Belgeler
+
+- Mimari kararlar: [docs/00-architecture.md](docs/00-architecture.md)
+- Spec + yol haritası: [docs/files/](docs/files/)
+- Kodlama kuralları: [CLAUDE.md](CLAUDE.md)
 
 ## Lisans
 
