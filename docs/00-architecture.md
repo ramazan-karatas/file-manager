@@ -1,65 +1,55 @@
 # Mimari ve Ortak Kararlar
 
-## 1. Repo yapısı (monorepo, çok APK)
+## 1. Repo yapısı
 
 ```
 system_apps/
 ├─ settings.gradle.kts
 ├─ build.gradle.kts
 ├─ gradle/libs.versions.toml        # tek merkezi bağımlılık kataloğu
-├─ build-logic/                     # convention plugin'ler (M1 sonunda eklenir)
-│   └─ convention/
-│       ├─ AndroidApplicationConventionPlugin.kt
-│       ├─ AndroidLibraryConventionPlugin.kt
-│       └─ ComposeConventionPlugin.kt
 ├─ core/
 │   ├─ common/      # dispatcher'lar, Outcome, formatter'lar (boyut, süre, tarih)
 │   ├─ design/      # Material 3 tema, renk, tipografi, ortak Composable'lar
 │   └─ storage/     # depolama birimleri, izin durumu, SAF köprüsü, MediaStore sorguları
-├─ app-files/
-└─ app-music/
+└─ app-files/
 ```
 
-**Bağımlılık yönü:** `app-*` → `core/*`. `core` modülleri birbirine sadece
+**Bağımlılık yönü:** `app-files` → `core/*`. `core` modülleri birbirine sadece
 `design → common`, `storage → common` şeklinde bağlanır. Ters yön yasak.
 
-**`core/design` neden var:** İki uygulamanın da aynı "sistem uygulaması" hissini vermesi
-gerekiyor. Tema, ikon boyutları, liste satırı yükseklikleri, boş durum ekranı,
-onay dialog'u, çoklu seçim üst çubuğu — hepsi burada tek yerde.
-
-**`core/storage` neden var:** Hem dosya yöneticisi hem müzik çalar MediaStore sorgusu,
-depolama birimi listesi (`StorageManager.storageVolumes`) ve izin kontrolü yapıyor.
-Tek tüketicisi olan şeyler buraya **girmez** (örn. ZIP açma → sadece `app-files`).
+**`core/*` neden ayrı:** Tema ve ortak Composable'lar (`design`), platform depolama
+API'leri (`storage`) ve saf yardımcılar (`common`) uygulama ekranlarından ayrı duruyor;
+bu sınır sayesinde `core` modülleri Android bağımlılığı olmadan ya da UI'dan bağımsız
+test edilebiliyor. Tek tüketicisi olan ve uygulamaya özgü şeyler buraya **girmez**
+(örn. ZIP açma → sadece `app-files`).
 
 ## 2. Teknoloji seçimleri ve gerekçeleri
 
 | Karar | Seçim | Gerekçe |
 |---|---|---|
 | Dil | Kotlin 2.3.10 (AGP 9 ile yerleşik gelir) | Coroutines/Flow, Compose zorunluluğu |
-| UI | Jetpack Compose + Material 3 | Dynamic color HyperOS'ta da çalışıyor; XML'e göre çok daha hızlı iterasyon |
+| UI | Jetpack Compose + Material 3 | Dynamic color desteği; XML'e göre çok daha hızlı iterasyon |
 | Navigasyon | Navigation-Compose, tek Activity | Basit; deep link ihtiyacı sınırlı |
 | DI | Hilt | Standart, ViewModel/Service enjeksiyonu hazır |
-| Veritabanı | Room | Müzik kütüphanesi cache'i ve çalma listeleri için |
-| Oynatma | Media3 (ExoPlayer + MediaLibraryService) | MediaSession, bildirim, Bluetooth, Android Auto neredeyse bedava gelir |
-| Görsel | Coil 3 | Compose entegrasyonu, custom Fetcher ile gömülü albüm kapağı |
+| Veritabanı | Room (M2) | Depolama analizi sonuçlarının cache'i için |
+| Görsel | Coil 3 | Compose entegrasyonu, custom Fetcher ile APK ikonu çıkarma |
 | Async | kotlinx.coroutines + Flow | — |
 | Statik analiz | Android Lint (detekt henüz eklenmedi) | — |
-| Test | JUnit5 + Turbine + Robolectric (gerektiğinde) | — |
+| Test | JUnit4 + Turbine + coroutines-test | — |
 
 **Bilinçli olarak kullanılmayanlar:** RxJava, Dagger (Hilt dışı), Retrofit (ağ yok),
 Firebase (hiçbir şeyi), herhangi bir analytics/ads SDK'sı.
 
 ## 3. SDK ve uyumluluk
 
-- `minSdk = 26` (Android 8.0). Gerekçe: `MediaStore` ve `AudioFocusRequest` API'leri
-  bu seviyeden itibaren tutarlı; daha eskisini desteklemenin maliyeti faydasından fazla.
+- `minSdk = 26` (Android 8.0). Gerekçe: `MediaStore` API'leri bu seviyeden itibaren
+  tutarlı; daha eskisini desteklemenin maliyeti faydasından fazla.
 - `targetSdk = 36`, `compileSdk = 36` (SDK'da kurulu platform: android-36).
-- Test cihazı: Xiaomi / HyperOS (API 34+). **HyperOS'a özgü tuzaklar:**
-  - Agresif arka plan kısıtlaması → foreground service + kullanıcıdan
-    "Otomatik başlat" ve "Pil kısıtlaması yok" izni istenmeli (onboarding'de anlat).
-  - `MANAGE_EXTERNAL_STORAGE` ekranına yönlendirme MIUI'de farklı davranabilir;
+- **Üretici ROM'larında dikkat edilenler** (agresif güç yönetimi yapan cihazlar):
+  - Arka plan kısıtlaması uzun işlemleri kesebilir → foreground service kullanılıyor.
+  - `MANAGE_EXTERNAL_STORAGE` ekranına yönlendirme her ROM'da aynı davranmıyor;
     `Intent.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION` başarısız olursa
-    genel ayarlar ekranına fallback yap.
+    genel ayarlar ekranına fallback yapılıyor.
 
 ## 4. Ortak mimari desen
 
@@ -77,7 +67,7 @@ DataSource (File I/O, MediaStore, Room, DocumentFile)
 
 - Her ekran: `XxxRoute` (hiltViewModel alır) + `XxxScreen` (saf, preview'lı).
 - Her ekranın `XxxUiState` data class'ı ve `XxxAction` sealed interface'i olur.
-- Uzun süren işler (kopyalama, tarama, oynatma) **foreground Service** içinde;
+- Uzun süren işler (kopyalama, tarama) **foreground Service** içinde;
   ViewModel servisin durumunu Flow olarak dinler.
 
 ## 5. İzin stratejisi
@@ -88,24 +78,21 @@ DataSource (File I/O, MediaStore, Room, DocumentFile)
 | `READ_EXTERNAL_STORAGE` | app-files (API ≤ 29) | eski cihaz fallback |
 | `READ_MEDIA_IMAGES` / `_VIDEO` / `_AUDIO` | app-files (sınırlı mod) | API 33+ |
 | `READ_MEDIA_VISUAL_USER_SELECTED` | app-files | API 34+. İstenmezse sistem "yalnızca seçilenler" seçeneğini hiç sunmaz; kısmi erişim de sınırlı mod sayılır. |
-| `READ_MEDIA_AUDIO` | app-music | API 33+ |
-| `READ_EXTERNAL_STORAGE` | app-music (API ≤ 32) | — |
 | `FOREGROUND_SERVICE` + `_DATA_SYNC` | app-files | dosya işlemi servisi |
-| `FOREGROUND_SERVICE` + `_MEDIA_PLAYBACK` | app-music | oynatma servisi |
-| `POST_NOTIFICATIONS` | ikisi de | API 33+ |
-| SAF (`ACTION_OPEN_DOCUMENT_TREE`) | app-files | `/Android/data` ve SD kart yazma için tek yol |
+| `POST_NOTIFICATIONS` | app-files | API 33+ |
+| `REQUEST_INSTALL_PACKAGES` | app-files | APK'ye dokununca sistem yükleyicisini açmak için |
+| SAF (`ACTION_OPEN_DOCUMENT_TREE`) | app-files | `/Android/data` ve SD kart yazma için tek yol (M2) |
 
-`INTERNET` izni **hiçbir modülde yok**. Bu bir güvenlik özelliği: uygulama ağa
+`INTERNET` izni **yok**. Bu bir güvenlik özelliği: uygulama ağa
 çıkamıyorsa reklam/telemetri de gösteremez. Kullanıcıya bunu açıkça söyle (Hakkında ekranı).
 
 ## 6. Paketleme
 
-- `applicationId`: `dev.rk.systemapps.files`, `dev.rk.systemapps.music`
-- Ortak `versionCode`/`versionName` root `build.gradle.kts` içinde tanımlı.
+- `applicationId`: `dev.rk.systemapps.files`
+- `versionCode`/`versionName` `app-files/build.gradle.kts` içinde tanımlı.
 - Release imzalama: yerel `keystore.properties` (repo'ya **girmez**, `.gitignore`).
-- R8/ProGuard release'te açık; Room, Hilt, Media3 için kural dosyaları eklenir.
+- R8/ProGuard release'te açık; Hilt ve Room için kural dosyaları eklenir.
 
 ## 7. Açık Sorular
 
 - [ ] Paket kökü `dev.rk.systemapps` kalsın mı, başka bir domain mi? (varsayım: kalsın)
-- [ ] `build-logic` convention plugin'leri M1'de mi yoksa iki uygulama da ayağa kalkınca mı? (varsayım: M1 sonunda)

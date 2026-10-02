@@ -15,8 +15,8 @@ Bir görev bitince buradaki kutuyu işaretle. Görevler sıralıdır; bağımlı
   - Modüller: `:core:common`, `:core:design`, `:core:storage`, `:app-files`
   - **Not:** AGP 9.1 Kotlin'i yerleşik getiriyor; `org.jetbrains.kotlin.android`
     uygulanırsa build başarısız oluyor — hiçbir modülde yok.
-  - `build-logic` convention plugin'leri henüz yok; dört modülde build dosyaları
-    tekrarlı. İkinci uygulama (`app-music`) eklenirken çıkarılacak.
+  - `build-logic` convention plugin'leri yok; dört modülde build dosyaları
+    tekrarlı. Tek uygulama için bu tekrar kabul edilebilir bulundu.
 
 - [x] **F-0.2 — `:core:common`**
   - `DispatcherProvider` (io/default/main) + Hilt modülü
@@ -29,7 +29,7 @@ Bir görev bitince buradaki kutuyu işaretle. Görevler sıralıdır; bağımlı
   - Bileşenler: `AppListItem` (+`ItemIcon`), `EmptyState`, `LoadingState`,
     `SelectionTopBar`, `ConfirmDialog`, `ProgressSheet`
   - **Not:** satır bileşeni `FileListItem` değil `AppListItem` adını aldı —
-    `app-music` de aynı satırı kullanacak, domain tipi bilmiyor.
+    `core/design` içinde duruyor ve domain tipi bilmiyor.
   - Kabul: her bileşenin açık/koyu preview'ı var.
 
 - [x] **F-0.4 — `:app-files` boş uygulama ayağa kalkıyor**
@@ -258,6 +258,4 @@ Bir görev bitince buradaki kutuyu işaretle. Görevler sıralıdır; bağımlı
 ## Önerilen çalışma sırası
 
 `F-0.1 → F-0.4` (iskelet) → `F-1.1 → F-1.11` (kullanılabilir uygulama) → cihazda 1 hafta
-günlük kullan → geri bildirime göre M2'yi önceliklendir. M2'den önce müzik çaların M1'ine
-geçmek de mantıklı: `:core:design` ve `:core:storage` orada ikinci tüketicisini bulur ve
-soyutlamalar erken doğrulanır.
+günlük kullan → geri bildirime göre M2'yi önceliklendir.
