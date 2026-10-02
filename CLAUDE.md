@@ -1,20 +1,19 @@
-# CLAUDE.md — system_apps
+# CLAUDE.md — Dosyalar
 
-Bu repo, MIUI/HyperOS'un reklamlı sistem uygulamalarının yerine geçecek, reklamsız,
-açık kaynak Android uygulamaları barındırır. Hedef cihaz: Xiaomi (HyperOS, API 34+).
+Bu repo, reklamlı dosya yöneticisi uygulamalarına alternatif olarak yazılmış,
+reklamsız ve ağa çıkmayan açık kaynak bir Android dosya yöneticisi barındırır.
 Dağıtım: sideload APK (Play Store politikalarına uyma zorunluluğu yok).
 
 ## Şu anki kapsam
 
-| Uygulama | Modül | Durum | Spec | Plan |
-|---|---|---|---|---|
-| Dosya Yöneticisi | `app-files` | planlandı | [docs/files/SPEC.md](docs/files/SPEC.md) | [docs/files/PLAN.md](docs/files/PLAN.md) |
-| Müzik Çalar | `app-music` | planlandı | [docs/music/SPEC.md](docs/music/SPEC.md) | [docs/music/PLAN.md](docs/music/PLAN.md) |
+| Uygulama | Modül | Spec | Plan |
+|---|---|---|---|
+| Dosyalar | `app-files` | [docs/files/SPEC.md](docs/files/SPEC.md) | [docs/files/PLAN.md](docs/files/PLAN.md) |
 
 Mimari kararlar ve modül grafiği: [docs/00-architecture.md](docs/00-architecture.md)
 
-Sunum için MIUI ile karşılaştırmalı ölçüm: [docs/files/BENCHMARK.md](docs/files/BENCHMARK.md)
-(ayrı oturumda, gerçek cihazla yapılacak)
+Yerleşik dosya yöneticisiyle karşılaştırmalı ölçüm:
+[docs/files/BENCHMARK.md](docs/files/BENCHMARK.md) (ayrı oturumda, gerçek cihazla yapılacak)
 
 ## Agent için çalışma kuralları
 
@@ -36,7 +35,7 @@ Sunum için MIUI ile karşılaştırmalı ölçüm: [docs/files/BENCHMARK.md](do
   hiçbir modüle ekleme — build hata verir. Compose için yalnızca
   `org.jetbrains.kotlin.plugin.compose` + `buildFeatures { compose = true }` uygulanır.
 - Jetpack Compose + Material 3 (dynamic color), tek Activity
-- Hilt (DI), Room (yerel veri), Media3 (oynatma), Coil 3 (görsel), kotlinx.coroutines
+- Hilt (DI), Room (yerel veri), Coil 3 (görsel), kotlinx.coroutines
 - `minSdk = 26`, `targetSdk = 36`, `compileSdk = 36`, JVM hedefi 17
 - Paket kökü: `dev.rk.systemapps`
 - Sürümler `gradle/libs.versions.toml` içinde; hepsi yerel Gradle cache'inde mevcut
@@ -75,12 +74,12 @@ detekt henüz kurulu değil — ekleneceği zaman version catalog'a eklenip bura
 - **Blocking I/O** asla main thread'de değil; `Dispatchers.IO` injected `CoroutineDispatcher` ile.
 - **Hata yönetimi:** Repository'ler exception fırlatmaz, `Result<T>` veya sealed `Outcome` döner.
 - **Test:** domain katmanındaki her use case için unit test zorunlu. UI testi sadece
-  kritik akışlar için (kopyala/taşı, oynatma kontrolü).
+  kritik akışlar için (kopyala/taşı).
 
 ## Yapma listesi
 
 - Analytics, crash reporting, reklam SDK'sı, telemetri — **hiçbiri yok**. Bu reponun varlık sebebi bu.
-- İnternet izni: `app-files` ve `app-music` M1/M2'de `INTERNET` iznine sahip **olmayacak**.
-  (Dosya yöneticisi M3'te SMB/FTP için alacak, o zaman spec güncellenecek.)
+- İnternet izni: `app-files` M1/M2'de `INTERNET` iznine sahip **olmayacak**.
+  (M3'te SMB/FTP için alacak, o zaman spec güncellenecek.)
 - Üçüncü parti kütüphane eklemeden önce `docs/00-architecture.md` içindeki listeye bak;
   yoksa ekleme gerekçesini oraya yaz.
