@@ -14,9 +14,7 @@ Kotlin + Jetpack Compose (Material 3).
 - Kategoriler: görseller, video, ses, belgeler, APK, arşivler
 - Uzun basarak çoklu seçim, paylaşma, özellikler penceresi
 
-**Bu uygulamada yok:** reklam, analytics, crash reporting, telemetri.
-**İnternet izni bile yok** — derleme sırasında birleşmiş manifest denetlenerek
-otomatik doğrulanıyor.
+Reklam, analytics, crash reporting, telemetri yok.
 
 ### Bilinen sınırlar
 
@@ -39,6 +37,4 @@ JDK 21 gerekir; Gradle daemon'ı kendi ayarlıyor.
 
 ## Lisans
 
-[Apache License 2.0](LICENSE). Kullanabilir, değiştirebilir, dağıtabilirsin;
-lisans metnini ve değişiklik bildirimini koruman yeterli. Lisans ayrıca açık bir
-patent hakkı verir — bu yazılımla ilgili patent davası açan taraf bu hakkı kaybeder.
+[Apache License 2.0](LICENSE).
