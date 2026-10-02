@@ -1,8 +1,7 @@
 # Gradle
 .gradle/
 build/
-!gradle/wrapper/gradle-wrapper.jar
-!build-logic/**/build/src
+.kotlin/
 
 # Android
 local.properties
@@ -10,9 +9,12 @@ local.properties
 *.aab
 *.ap_
 *.dex
+*.hprof
 release/
 captures/
 .cxx/
+.externalNativeBuild/
+lint-results*.*
 
 # İmzalama — asla commit'lenmez
 keystore.properties
@@ -22,9 +24,12 @@ keystore.properties
 # IDE
 .idea/
 *.iml
-.kotlin/
+.vscode/
 out/
 
-# OS
+# OS / düzenleyici artıkları
 .DS_Store
 Thumbs.db
+*.log
+*.swp
+*~
