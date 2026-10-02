@@ -13,3 +13,9 @@ açık kaynak alternatifleri. Kotlin + Jetpack Compose monorepo.
 - Spec + planlar: `docs/files/`, `docs/music/`
 
 **Bu uygulamalarda yok:** reklam, analytics, crash reporting, telemetri, internet izni.
+
+## Lisans
+
+[Apache License 2.0](LICENSE). Kullanabilir, değiştirebilir, dağıtabilirsin;
+lisans metnini ve değişiklik bildirimini koruman yeterli. Lisans ayrıca açık bir
+patent hakkı verir — bu yazılımla ilgili patent davası açan taraf bu hakkı kaybeder.
